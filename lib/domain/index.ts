@@ -1,0 +1,193 @@
+// ============================================================================
+// DOMINIO — Tipos y contratos compartidos cliente/servidor.
+// Este módulo NO importa de nadie (solo define tipos y constantes).
+// ============================================================================
+
+// ---- Roles ----
+export type UserRole = 'user' | 'admin';
+
+// ---- Perfil ----
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  birth_year: number | null;
+  country: string | null;
+  city: string | null;
+  role: UserRole;
+  is_vip: boolean;
+  is_blocked: boolean;
+  accepted_terms_at: string | null;
+  accepted_privacy_at: string | null;
+  created_at: string;
+}
+
+// ---- Caso ----
+export interface Case {
+  id: string;
+  slug: string;
+  title: string;
+  synopsis: string;
+  city: string;
+  era_year: number;
+  era_profile: string;
+  time_limit_min: number;
+  briefing_voice_path: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+// ---- Variante (culprit NUNCA se envía al cliente) ----
+export interface Variant {
+  id: string;
+  case_id: string;
+  code: string; // 'A' | 'B' | 'C'
+  active: boolean;
+  culprit: string;
+  solution_narrative: string;
+  solution_voice_path: string | null;
+  commander_context: string;
+  rubric: VerdictRubric;
+}
+
+export interface VerdictRubric {
+  how_keywords: string[];
+  why_keywords: string[];
+  how_summary: string;
+  why_summary: string;
+}
+
+// ---- Evidencia ----
+export type EvidenceKind = 'audio' | 'video' | 'document' | 'hint';
+export type EvidenceScope = 'shared' | 'variant';
+export type EvidenceDelivery = 'chat_push' | 'on_request' | 'code_only';
+
+export interface EvidenceItem {
+  id: string;
+  case_id: string | null;
+  variant_id: string | null;
+  code: string;
+  kind: EvidenceKind;
+  scope: EvidenceScope;
+  title: string;
+  body_md: string | null;
+  media_path: string | null;
+  transcript: string | null;
+  unlocked_by: string[];
+  deliverable_from_minute: number;
+  delivery: EvidenceDelivery;
+}
+
+// ---- Timeline de eventos temporales ----
+export type TimelineAction = 'message' | 'voice' | 'evidence' | 'pressure' | 'deadline';
+
+export interface TimelineEvent {
+  id: string;
+  case_id: string;
+  minute: number;
+  action: TimelineAction;
+  payload: Record<string, unknown>;
+  variant_scope: string | null; // null = todas las variantes
+}
+
+// ---- Sesión ----
+export type SessionStatus =
+  | 'created'
+  | 'activated'
+  | 'in_progress'
+  | 'verdict_submitted'
+  | 'resolved'
+  | 'expired';
+
+export interface GameSession {
+  id: string;
+  access_code_id: string;
+  user_id: string;
+  case_id: string;
+  variant_id: string | null;
+  status: SessionStatus;
+  created_at: string;
+  activated_at: string | null;
+  expires_at: string | null;
+  hints_used: number;
+}
+
+// ---- Mensajes del chat ----
+export type ChatRole = 'commander' | 'players';
+export type ChatKind = 'text' | 'voice' | 'evidence_card' | 'system';
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  at: string;
+  role: ChatRole;
+  kind: ChatKind;
+  content: string;
+  voice_path: string | null;
+  evidence_code: string | null;
+}
+
+// ---- Eventos de sesión (telemetría) ----
+export type SessionEventType =
+  | 'unlock'
+  | 'hint'
+  | 'timed_event_fired'
+  | 'guardrail_attempt'
+  | 'verdict_submitted'
+  | 'evidence_requested';
+
+export interface SessionEvent {
+  id: string;
+  session_id: string;
+  at: string;
+  type: SessionEventType;
+  payload: Record<string, unknown>;
+}
+
+// ---- Veredicto ----
+export type VerdictScore = 'correcto' | 'parcial' | 'incorrecto';
+
+export interface Verdict {
+  session_id: string;
+  accused: string;
+  how_text: string;
+  why_text: string;
+  culprit_correct: boolean;
+  how_score: VerdictScore;
+  why_score: VerdictScore;
+  total_score: number;
+  created_at: string;
+}
+
+// ---- Códigos de acceso ----
+export type AccessCodeStatus =
+  | 'draft'
+  | 'sent'
+  | 'redeemed'
+  | 'activated'
+  | 'in_progress'
+  | 'completed'
+  | 'expired';
+
+export interface AccessCode {
+  id: string;
+  code: string;
+  user_id: string;
+  case_id: string;
+  status: AccessCodeStatus;
+  note: string | null;
+  session_id: string | null;
+  created_at: string;
+  sent_at: string | null;
+  redeemed_at: string | null;
+  activated_at: string | null;
+  completed_at: string | null;
+}
+
+// ---- Constantes de negocio ----
+export const CODE_REDEEM_WINDOW_HOURS = 24; // desde sent_at para canjear
+export const CODE_TOTAL_LIFE_DAYS = 5; // desde created_at, vida total
+export const SESSION_WINDOW_HOURS = 24; // desde activated_at para completar
+export const MAX_HINTS = 3;
+export const HINT_PENALTY = 15; // puntos por pista
+export const BASE_SCORE = 100;
