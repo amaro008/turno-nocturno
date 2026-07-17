@@ -5,7 +5,6 @@ import { computeCodeTiming } from '@/lib/engine/code-lifecycle';
 import { AccessCodeStatus } from '@/lib/domain';
 import { redeemCode } from './actions';
 import Countdown from './_components/Countdown';
-import ActivateButton from './_components/ActivateButton';
 
 export const metadata = { title: 'Mi biblioteca · Turno Nocturno' };
 export const dynamic = 'force-dynamic';
@@ -123,7 +122,11 @@ export default async function BibliotecaPage({
                         <button className="btn primary block" type="submit">Canjear</button>
                       </form>
                     )}
-                    {status === 'redeemed' && <ActivateButton codeId={c.id} />}
+                    {status === 'redeemed' && (
+                      <Link className="btn primary block" href={`/s/${c.code}/briefing`}>
+                        Activar sesión
+                      </Link>
+                    )}
                     {(status === 'activated' || status === 'in_progress') && (
                       <Link className="btn primary block" href={`/s/${c.code}`}>
                         Entrar a la sesión

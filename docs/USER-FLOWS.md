@@ -54,17 +54,26 @@ Páginas públicas sin autenticación, con identidad visual e imágenes.
 5. Redirige a biblioteca; tarjeta del caso aparece con "Activar sesión" y countdown de vida útil
 6. Si inválido: mensaje claro (código incorrecto / expirado / no es tuyo)
 
-## Flujo 3 — Usuario activa sesión
-1. En biblioteca, click "Activar sesión" en la tarjeta del caso
-2. Diálogo de confirmación: "Una vez activada tendrás 2-3 h para resolver el caso y
-   hasta 24 h para completarlo. ¿Listos?"
-3. Click "Sí, activar"
-4. Backend:
-   - Cambia `access_codes.status` → `activated`, `activated_at = now()`
-   - Sortea variante entre `variants WHERE case_id = X AND active`
+## Flujo 3 — Briefing y arranque del turno (Fase 3)
+El reloj ya **no** arranca al salir de la biblioteca. Hay un paso de preparación.
+1. En biblioteca, click "Activar sesión" → redirige a **`/s/[code]/briefing`**.
+   > Aquí NO se crea la sesión ni se sortea variante ni corre el reloj.
+2. La pantalla de briefing muestra (todo desde el servidor, sin exponer la solución):
+   - Título del caso, ciudad + época en grande, con imagen atmosférica de fondo
+   - Sinopsis técnica (con gancho, distinta de la de catálogo)
+   - Grid de sospechosos con foto, nombre y una línea (SIN coartadas ni motivos)
+   - Cómo se gana: duración, 3 pistas, 1 veredicto
+   - Recomendaciones: pantalla compartida, volumen, alguien tomando notas
+3. Botón grande **"INICIAR TURNO NOCTURNO"** → confirmación ("una vez que inicies, el
+   reloj no se detiene"). Botón secundario "Regresar a mi biblioteca" (sin arrancar nada).
+4. Al confirmar → `POST /api/sessions/activate { code, confirm:true }`:
+   - `access_codes.status` `redeemed → activated`, `activated_at = now()`
+   - **Sorteo de variante** entre `variants WHERE case_id = X AND active`
    - Crea `sessions` con `activated_at = now()`, `expires_at = activated_at + 24h`
-5. Redirige a `/s/[access_code]`
-6. Pantalla CRT de encendido → chat abre con "escribiendo…" → briefing con voz
+5. Redirige a `/s/[code]` (el portal de juego). El reloj corre desde `activated_at`.
+
+> Idempotente: si el código ya está `activated`/`in_progress`, tanto el briefing como
+> la API mandan directo al portal de juego sin recrear nada.
 
 ## Flujo 4 — Sesión de juego (bucle principal)
 1. Jugadores leen evidencia desde chat o Expediente

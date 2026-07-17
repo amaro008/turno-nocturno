@@ -42,8 +42,11 @@ draft → sent → redeemed → activated → in_progress → completed
 
 - **draft:** creado por admin, aún no enviado por email
 - **sent:** email enviado al usuario (marca de tiempo `sent_at`)
-- **redeemed:** el usuario capturó el código y quedó en su biblioteca (`redeemed_at`)
-- **activated:** el usuario abrió la sesión y arrancó el reloj (`activated_at`)
+- **redeemed:** el usuario capturó el código y quedó en su biblioteca (`redeemed_at`).
+  > (Fase 3) Desde biblioteca "Activar sesión" lleva al **briefing** (`/s/[code]/briefing`);
+  > el código sigue en `redeemed` mientras el usuario lee el caso. El reloj aún no corre.
+- **activated:** el usuario **confirmó "INICIAR TURNO NOCTURNO"** en el briefing → se crea la
+  sesión, se sortea la variante y arranca `activated_at`. (Antes ocurría al salir de biblioteca.)
 - **in_progress:** sesión en curso, dentro de la ventana de resolución
 - **completed:** veredicto entregado (correcto o no)
 - **expired:** dos causas — no redimido en ventana de 5 días O activado pero no completado en la ventana de sesión
