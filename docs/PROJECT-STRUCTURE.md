@@ -188,8 +188,16 @@ turno-nocturno/
 │   └── analytics/
 │       └── track.ts
 │
-├── components/                     # Globales reutilizables (shadcn/ui)
-│   └── ui/                                 # button, dialog, sheet, table, form, badge, sonner...
+├── components/                     # Globales reutilizables
+│   ├── AppHeader.tsx                       # Header autenticado (biblioteca/admin)
+│   ├── AtmoImage.tsx                       # <img> con respaldo (Unsplash → picsum)
+│   ├── Initials.tsx                        # Placeholders con iniciales sobre gradiente (Fase 5)
+│   ├── Skeleton.tsx                        # Skeletons de carga (Fase 5)
+│   └── EmptyState.tsx                      # Estado vacío con ilustración (Fase 5)
+│
+│   # Fase 5 extra: app/robots.ts, app/(marketing)/opengraph-image.tsx,
+│   # loading.tsx (skeletons) en /casos, /mi-biblioteca y /s/[code],
+│   # y micro-interacciones Framer Motion en la consola.
 │
 ├── middleware.ts                   # Auth + role checks + redirecciones
 │

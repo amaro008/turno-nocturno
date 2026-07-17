@@ -4,7 +4,17 @@ import CatalogClient from './_components/CatalogClient';
 import { getActiveCases } from '@/lib/server/public-cases';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Casos · Turno Nocturno' };
+export const metadata = {
+  title: 'Casos · Turno Nocturno',
+  description: 'Catálogo de casos criminales ambientados en ciudades icónicas de LATAM. Elige tu caso y reúne a tu mesa.',
+  openGraph: {
+    title: 'Casos · Turno Nocturno',
+    description: 'Ciudades icónicas de LATAM, cada una con su crimen y su época.',
+    type: 'website',
+    locale: 'es_MX',
+    siteName: 'Turno Nocturno',
+  },
+};
 
 export default async function CasosPage() {
   const cases = await getActiveCases();

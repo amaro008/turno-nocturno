@@ -7,15 +7,12 @@ import { signedUrl } from '@/lib/server/storage';
 import { canActivate } from '@/lib/engine/code-lifecycle';
 import { MAX_HINTS } from '@/lib/domain';
 import AtmoImage from '@/components/AtmoImage';
+import { InitialsAvatar } from '@/components/Initials';
 import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
 import StartTurnButton from './StartTurnButton';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Briefing · Turno Nocturno' };
-
-function initials(name: string) {
-  return name.split(' ').map((p) => p[0]).slice(0, 2).join('');
-}
+export const metadata = { title: 'Briefing · Turno Nocturno', referrer: 'no-referrer' as const };
 
 export default async function BriefingPage({ params }: { params: { code: string } }) {
   const user = await getAuthedUser();
@@ -82,11 +79,7 @@ export default async function BriefingPage({ params }: { params: { code: string 
               {suspectPhotos.map((s) => (
                 <div className="susp-card" key={s.id}>
                   <div className="susp-photo">
-                    {s.url ? (
-                      <img src={s.url} alt={s.name} />
-                    ) : (
-                      <span className="susp-initials">{initials(s.name)}</span>
-                    )}
+                    {s.url ? <img src={s.url} alt={s.name} /> : <InitialsAvatar name={s.name} />}
                   </div>
                   <div className="susp-info">
                     <h3>{s.name}</h3>

@@ -1,9 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { formatClock } from '@/lib/ui/format-time';
 import type { SessionState, Msg, PublicEvidence, ExpTab, VerdictRow } from './types';
 import { useNewEvidenceNotification } from './useNewEvidenceNotification';
+import SessionSkeleton from './SessionSkeleton';
+import EmptyState from '@/components/EmptyState';
 import SuspectsGrid from './expediente/SuspectsGrid';
 import DocumentsList from './expediente/DocumentsList';
 import AudioPlayer from './expediente/AudioPlayer';
@@ -39,8 +42,10 @@ export default function SessionApp({ code }: { code: string }) {
   const [tab, setTab] = useState<ExpTab>('sospechosos');
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [resolution, setResolution] = useState<Resolution | null>(null);
+  const [mobileView, setMobileView] = useState<'chat' | 'exp'>('chat');
   const threadRef = useRef<HTMLDivElement>(null);
 
+  const reduce = useReducedMotion();
   const { badges, toasts, acknowledge, dismissToast } = useNewEvidenceNotification(
     state?.evidence ?? [],
     tab,
@@ -141,14 +146,14 @@ export default function SessionApp({ code }: { code: string }) {
     [code, fetchState],
   );
 
-  if (!state) return <div className="loading-crt">▮ Encendiendo el turno nocturno…</div>;
+  if (!state) return <SessionSkeleton />;
 
-  const warn = seconds < 30 * 60;
   const cdClass = seconds > 60 * 60 ? 'green' : seconds >= 30 * 60 ? 'amber' : 'red';
   const docs = state.evidence.filter((e) => e.kind === 'document' || e.kind === 'hint');
   const audios = state.evidence.filter((e) => e.kind === 'audio');
   const videos = state.evidence.filter((e) => e.kind === 'video');
   const hintsLeft = state.maxHints - state.hintsUsed;
+  const totalNew = (badges.documentos ?? 0) + (badges.audios ?? 0) + (badges.videos ?? 0);
 
   return (
     <div className="sess">
@@ -179,8 +184,16 @@ export default function SessionApp({ code }: { code: string }) {
         </div>
       </header>
 
+      {/* Toggle chat/expediente (solo tablet vertical y menor) */}
+      <div className="console-toggle">
+        <button className={mobileView === 'chat' ? 'active' : ''} onClick={() => setMobileView('chat')}>Chat</button>
+        <button className={mobileView === 'exp' ? 'active' : ''} onClick={() => { setMobileView('exp'); acknowledge(tab); }}>
+          Expediente{totalNew > 0 && <span className="ct-badge">{totalNew}</span>}
+        </button>
+      </div>
+
       {/* ===== Zona central ===== */}
-      <main className="console">
+      <main className={'console mv-' + mobileView}>
         {/* Chat (40%) */}
         <section className="chat">
           <div className="thread scroll" ref={threadRef}>
@@ -239,12 +252,25 @@ export default function SessionApp({ code }: { code: string }) {
           </div>
 
           <div className="panels scroll">
-            {tab === 'sospechosos' && <SuspectsGrid suspects={state.suspects} />}
-            {tab === 'documentos' && <DocumentsList docs={docs} sessionCode={code} />}
-            {tab === 'audios' && (audios.length ? audios.map((a) => <AudioPlayer key={a.id} item={a} />) : <div className="exp-empty">Aún no reciben audios.</div>)}
-            {tab === 'videos' && (videos.length ? videos.map((v) => <VideoPlayer key={v.id} item={v} />) : <div className="exp-empty">Aún no reciben videos.</div>)}
-            {tab === 'notas' && <NotesBoard code={code} initial={state.playerNotes} />}
-            {tab === 'codigos' && <EvidenceCodeInput code={code} onUnlocked={fetchState} />}
+            <motion.div
+              key={tab}
+              initial={reduce ? false : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22 }}
+            >
+              {tab === 'sospechosos' && <SuspectsGrid suspects={state.suspects} />}
+              {tab === 'documentos' && <DocumentsList docs={docs} sessionCode={code} />}
+              {tab === 'audios' &&
+                (audios.length ? audios.map((a) => <AudioPlayer key={a.id} item={a} />) : (
+                  <EmptyState ill="audio" title="Sin audios todavía" message="Los audios que reciban del Comandante aparecerán aquí con su transcripción." />
+                ))}
+              {tab === 'videos' &&
+                (videos.length ? videos.map((v) => <VideoPlayer key={v.id} item={v} />) : (
+                  <EmptyState ill="video" title="Sin videos todavía" message="Los videos del expediente aparecerán aquí cuando lleguen." />
+                ))}
+              {tab === 'notas' && <NotesBoard code={code} initial={state.playerNotes} />}
+              {tab === 'codigos' && <EvidenceCodeInput code={code} onUnlocked={fetchState} />}
+            </motion.div>
 
             {(tab === 'documentos' || tab === 'audios' || tab === 'videos') && (
               <div className="protect-note">
@@ -300,10 +326,14 @@ export default function SessionApp({ code }: { code: string }) {
 /* ---------- Subcomponentes de chat / veredicto ---------- */
 
 function MessageRow({ m }: { m: Msg }) {
-  if (m.kind === 'system') return <div className="sys">{m.content}</div>;
+  const reduce = useReducedMotion();
+  const anim = reduce
+    ? {}
+    : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25 } };
+  if (m.kind === 'system') return <motion.div className="sys" {...anim}>{m.content}</motion.div>;
   const mine = m.role === 'players';
   return (
-    <div className={'row ' + (mine ? 'me' : 'them')}>
+    <motion.div className={'row ' + (mine ? 'me' : 'them')} {...anim}>
       <div className="avatar">{mine ? 'TÚ' : 'C'}</div>
       <div className="stack">
         {m.kind === 'evidence_card' && m.evidence ? (
@@ -314,14 +344,18 @@ function MessageRow({ m }: { m: Msg }) {
           <div className="bubble">{m.content}</div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function EvidenceCard({ ev }: { ev: PublicEvidence }) {
+  const reduce = useReducedMotion();
   const kindLabel = ev.kind === 'audio' ? 'AUD' : ev.kind === 'video' ? 'VID' : 'DOC';
+  const anim = reduce
+    ? {}
+    : { initial: { opacity: 0, x: 44 }, animate: { opacity: 1, x: 0 }, transition: { type: 'spring' as const, stiffness: 420, damping: 20 } };
   return (
-    <article className="ev">
+    <motion.article className="ev" {...anim}>
       <div className="ev-tag">{kindLabel}</div>
       <div className="ev-main">
         <div className="ev-ic">
@@ -329,7 +363,7 @@ function EvidenceCard({ ev }: { ev: PublicEvidence }) {
         </div>
         <div><div className="ev-title">{ev.title}</div><div className="ev-sub">{ev.kind} · {ev.code} · míralo en el Expediente</div></div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 

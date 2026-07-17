@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import AtmoImage from '@/components/AtmoImage';
-import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
+import { InitialsCover } from '@/components/Initials';
+import EmptyState from '@/components/EmptyState';
 import { DIFFICULTY_LABEL, type CaseDifficulty } from '@/lib/domain';
 import type { PublicCase } from '@/lib/server/public-cases';
+
+function caseNumber(slug: string) {
+  return slug.split('-')[0] ?? '00';
+}
 
 export default function CatalogClient({ cases }: { cases: PublicCase[] }) {
   const [city, setCity] = useState('all');
@@ -47,19 +51,17 @@ export default function CatalogClient({ cases }: { cases: PublicCase[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p style={{ color: 'var(--ink-3)', textAlign: 'center', padding: '40px 0' }}>
-          No hay casos con esos filtros.
-        </p>
+        <EmptyState ill="search" title="Sin resultados" message="No hay casos con esos filtros. Prueba con otra ciudad o época." />
       ) : (
         <div className="catalog-grid">
           {filtered.map((c) => (
             <Link className="ccard" href={`/casos/${c.slug}`} key={c.slug}>
               <div className="ccard-cover">
-                <AtmoImage
-                  primary={c.coverUrl ?? unsplashUrl(`${c.city} ${c.era_year} noir crime`, 700, 470)}
-                  fallback={picsumUrl(`case-${c.slug}`, 700, 470, true)}
-                  alt={c.title}
-                />
+                {c.coverUrl ? (
+                  <img src={c.coverUrl} alt={c.title} />
+                ) : (
+                  <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
+                )}
                 <div className="cc-scrim" />
                 <span className="cc-place">{c.city} · {c.era_year}</span>
                 <span className="badge-state on cc-diff">{DIFFICULTY_LABEL[c.difficulty]}</span>

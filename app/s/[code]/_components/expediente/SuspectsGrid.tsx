@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import type { SessionSuspect } from '../types';
-
-function initials(name: string) {
-  return name.split(' ').map((p) => p[0]).slice(0, 2).join('');
-}
+import { InitialsAvatar } from '@/components/Initials';
+import EmptyState from '@/components/EmptyState';
 
 export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] }) {
   const [open, setOpen] = useState<SessionSuspect | null>(null);
@@ -21,7 +19,13 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
   }
 
   if (suspects.length === 0) {
-    return <div className="exp-empty">Este caso no tiene sospechosos cargados.</div>;
+    return (
+      <EmptyState
+        ill="suspects"
+        title="Sin sospechosos"
+        message="Este caso todavía no tiene sospechosos cargados en el expediente."
+      />
+    );
   }
 
   return (
@@ -33,7 +37,7 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
             <div className={'suspect-card' + (isOut ? ' discarded' : '')} key={s.id}>
               <button className="suspect-open" onClick={() => setOpen(s)}>
                 <div className="suspect-photo">
-                  {s.photoUrl ? <img src={s.photoUrl} alt={s.name} draggable={false} /> : <span className="suspect-initials">{initials(s.name)}</span>}
+                  {s.photoUrl ? <img src={s.photoUrl} alt={s.name} draggable={false} /> : <InitialsAvatar name={s.name} />}
                   {isOut && <span className="discard-stamp">DESCARTADO</span>}
                 </div>
                 <div className="suspect-body">
@@ -57,7 +61,7 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
           <div className="modal suspect-modal" onClick={(e) => e.stopPropagation()}>
             <div className="suspect-modal-top">
               <div className="suspect-modal-photo">
-                {open.photoUrl ? <img src={open.photoUrl} alt={open.name} draggable={false} /> : <span className="suspect-initials">{initials(open.name)}</span>}
+                {open.photoUrl ? <img src={open.photoUrl} alt={open.name} draggable={false} /> : <InitialsAvatar name={open.name} />}
               </div>
               <div>
                 <h2 style={{ margin: 0 }}>{open.name}</h2>

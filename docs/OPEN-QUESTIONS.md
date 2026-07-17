@@ -12,6 +12,12 @@
 6. Modelo Anthropic exacto para runtime: sonnet vs opus (medir latencia y calidad)
 7. Aviso de privacidad y términos: revisión legal antes de cobrar (borrador base con plantilla LFPDPPP)
 8. ¿Marca visual del panel admin diferente del portal público, o mismo brand? (recomendado: mismo brand)
+10. **Optimización móvil (deferida a V1, Fase 5):** en MVP el portal de sesión está pensado para
+    pantalla compartida (desktop/tablet). En tablet horizontal (≥1024px) se mantienen las 2 columnas;
+    en tablet vertical y menor, chat y Expediente se apilan con un toggle superior. En móvil es
+    **aceptable pero no optimizado**. V1 debe rediseñar la consola para móvil (¿un solo panel con
+    navegación por gestos? ¿el chat como hoja inferior deslizable?).
+
 9. **Impresión de evidencia (deferida a V1, Fase 4):** en MVP NO se habilita impresión. Decisión
    pendiente: ¿imprimir a PDF con marca de agua (código de sesión + fecha), o solo un "modo
    lectura fácil" a pantalla completa para leer en pantalla sin descargar? Trade-off: la impresión

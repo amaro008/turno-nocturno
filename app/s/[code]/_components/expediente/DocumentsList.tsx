@@ -3,12 +3,19 @@
 import { useState } from 'react';
 import type { PublicEvidence } from '../types';
 import { Markdown } from '../markdown';
+import EmptyState from '@/components/EmptyState';
 
 export default function DocumentsList({ docs, sessionCode }: { docs: PublicEvidence[]; sessionCode: string }) {
   const [open, setOpen] = useState<PublicEvidence | null>(null);
 
   if (docs.length === 0) {
-    return <div className="exp-empty">Aún no reciben documentos. Pídanselos al Comandante en el chat.</div>;
+    return (
+      <EmptyState
+        ill="folder"
+        title="Sin documentos todavía"
+        message="Cuando el Comandante entregue documentos aparecerán aquí. Pídeselos en el chat."
+      />
+    );
   }
 
   return (

@@ -5,6 +5,7 @@ import { computeCodeTiming } from '@/lib/engine/code-lifecycle';
 import { AccessCodeStatus } from '@/lib/domain';
 import { redeemCode } from './actions';
 import Countdown from './_components/Countdown';
+import EmptyState from '@/components/EmptyState';
 
 export const metadata = { title: 'Mi biblioteca · Turno Nocturno' };
 export const dynamic = 'force-dynamic';
@@ -76,9 +77,12 @@ export default async function BibliotecaPage({
       </div>
 
       {codes.length === 0 ? (
-        <div className="empty" style={{ marginTop: 26 }}>
-          <h3>Tu biblioteca está vacía</h3>
-          <p>Cuando canjees un código de acceso, tu caso aparecerá aquí listo para activar.</p>
+        <div style={{ marginTop: 26 }}>
+          <EmptyState
+            ill="folder"
+            title="Tu biblioteca está vacía"
+            message="Cuando canjees un código de acceso, tu caso aparecerá aquí listo para activar."
+          />
         </div>
       ) : (
         <div className="lib-grid">

@@ -12,7 +12,19 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const c = await getPublicCase(params.slug);
-  return { title: c ? `${c.title} · Turno Nocturno` : 'Caso · Turno Nocturno' };
+  if (!c) return { title: 'Caso · Turno Nocturno' };
+  const desc = (c.marketing_synopsis || c.synopsis || '').slice(0, 200);
+  return {
+    title: `${c.title} · Turno Nocturno`,
+    description: desc,
+    openGraph: {
+      title: `${c.title} · ${c.city} ${c.era_year}`,
+      description: desc,
+      type: 'article',
+      locale: 'es_MX',
+      siteName: 'Turno Nocturno',
+    },
+  };
 }
 
 const NEEDS = [

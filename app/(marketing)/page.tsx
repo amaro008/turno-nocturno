@@ -2,11 +2,34 @@ import Link from 'next/link';
 import SiteNav from './_components/SiteNav';
 import SiteFooter from './_components/SiteFooter';
 import AtmoImage from '@/components/AtmoImage';
+import { InitialsCover } from '@/components/Initials';
 import { getActiveCases } from '@/lib/server/public-cases';
 import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
 
+function caseNumber(slug: string) {
+  return slug.split('-')[0] ?? '00';
+}
+
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: 'Turno Nocturno — Reabre el caso',
+  description:
+    'Juego de misterio conducido por IA. Reúne a tu mesa, reabran un caso criminal archivado y encuentren al culpable antes de que el reloj llegue a cero.',
+  openGraph: {
+    title: 'Turno Nocturno — Reabre el caso',
+    description: 'Una noche, una mesa, el reloj en contra. El culpable cambia en cada partida.',
+    type: 'website',
+    locale: 'es_MX',
+    siteName: 'Turno Nocturno',
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Turno Nocturno — Reabre el caso',
+    description: 'Juego de misterio conducido por IA. Reabre casos criminales con tu mesa.',
+  },
+};
 
 const STEPS = [
   { n: '01', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas listo.', q: 'sign up,desk,vintage', seed: 'tn-step1' },
@@ -97,11 +120,11 @@ export default async function HomePage() {
               {cases.slice(0, 3).map((c) => (
                 <Link className="ccard" href={`/casos/${c.slug}`} key={c.slug}>
                   <div className="ccard-cover">
-                    <AtmoImage
-                      primary={c.coverUrl ?? unsplashUrl(`${c.city} ${c.era_year} noir`, 700, 470)}
-                      fallback={picsumUrl(`case-${c.slug}`, 700, 470, true)}
-                      alt={c.title}
-                    />
+                    {c.coverUrl ? (
+                      <img src={c.coverUrl} alt={c.title} />
+                    ) : (
+                      <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
+                    )}
                     <div className="cc-scrim" />
                     <span className="cc-place">{c.city} · {c.era_year}</span>
                     <span className="badge-state on cc-diff">{DIFFICULTY_LABEL[c.difficulty]}</span>
