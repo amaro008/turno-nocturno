@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import SiteNav from './_components/SiteNav';
 import SiteFooter from './_components/SiteFooter';
+import SiteAsset from '@/components/SiteAsset';
 import { InitialsCover } from '@/components/Initials';
 import { getActiveCases } from '@/lib/server/public-cases';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
@@ -33,16 +34,19 @@ function caseNumber(slug: string) {
 const PIN_ROT = [-2.5, 1.8, -1.2, 2.4, -1.8, 1.2];
 
 const STEPS = [
-  { n: '01', label: 'PASO 01', stamp: 'ARCHIVO', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas dentro del sistema.' },
-  { n: '02', label: 'PASO 02', stamp: 'PENDIENTE', title: 'Recibe tu código', text: 'Te llega por correo un código de acceso para el caso que elegiste.' },
-  { n: '03', label: 'PASO 03', stamp: 'ACTIVO', title: 'Reúne a tu mesa', text: 'De 2 a 6 detectives frente a una pantalla. El reloj arranca.' },
+  { n: '01', label: 'PASO 01', stamp: 'ARCHIVO', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas dentro del sistema.', asset: 'landing.how_step_1' },
+  { n: '02', label: 'PASO 02', stamp: 'PENDIENTE', title: 'Recibe tu código', text: 'Te llega por correo un código de acceso para el caso que elegiste.', asset: 'landing.how_step_2' },
+  { n: '03', label: 'PASO 03', stamp: 'ACTIVO', title: 'Reúne a tu mesa', text: 'De 2 a 6 detectives frente a una pantalla. El reloj arranca.', asset: 'landing.how_step_3' },
 ] as const;
 
 const TESTIMONIALS = [
-  { quote: 'Terminamos gritándole al Comandante como si fuera real. Dos horas que se sintieron veinte minutos.', name: 'Mariana G.', role: 'Mesa de 4 · CDMX', rot: -2.5 },
-  { quote: 'La evidencia de época está increíble. Sentías que estabas en el 89 de verdad.', name: 'Diego R.', role: 'Mesa de 5 · Monterrey', rot: 1.8 },
-  { quote: 'Lo volvimos a jugar y el culpable era otro. No lo podíamos creer.', name: 'Sofía L.', role: 'Mesa de 3 · GDL', rot: -1.2 },
+  { quote: 'Terminamos gritándole al Comandante como si fuera real. Dos horas que se sintieron veinte minutos.', name: 'Mariana G.', role: 'Mesa de 4 · CDMX', rot: -2.5, asset: 'landing.testimonial_1_avatar' },
+  { quote: 'La evidencia de época está increíble. Sentías que estabas en el 89 de verdad.', name: 'Diego R.', role: 'Mesa de 5 · Monterrey', rot: 1.8, asset: 'landing.testimonial_2_avatar' },
+  { quote: 'Lo volvimos a jugar y el culpable era otro. No lo podíamos creer.', name: 'Sofía L.', role: 'Mesa de 3 · GDL', rot: -1.2, asset: 'landing.testimonial_3_avatar' },
 ] as const;
+
+const initials = (name: string) =>
+  name.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 export default async function HomePage() {
   const cases = await getActiveCases();
@@ -53,6 +57,9 @@ export default async function HomePage() {
 
       {/* ===================== HERO — escritorio de detective ===================== */}
       <section className="noir-hero" aria-label="Turno Nocturno">
+        <div className="noir-hero-photo" aria-hidden="true">
+          <SiteAsset slot="landing.hero" sizes="100vw" priority />
+        </div>
         <div className="noir-hero-lamp" aria-hidden="true" />
         <div className="noir-hero-grain" aria-hidden="true" />
 
@@ -129,6 +136,9 @@ export default async function HomePage() {
                   <PaperclipCorner />
                   <ConfidentialStamp variant="EVIDENCIA" rotate={7} className="step-stamp" />
                   <ManillaFolder label={s.label}>
+                    <div className="step-photo">
+                      <SiteAsset slot={s.asset} sizes="(max-width: 900px) 100vw, 340px" fallbackLabel={s.n} />
+                    </div>
                     <div className="step-num font-editorial">{s.n}</div>
                     <h3 className="font-typewriter">{s.title}</h3>
                     <p>{s.text}</p>
@@ -192,8 +202,15 @@ export default async function HomePage() {
                 <div className="postit" style={{ transform: `rotate(${t.rot}deg)` }}>
                   {i === 1 && <CoffeeStain className="postit-coffee" size={80} rotate={-10} opacity={0.35} />}
                   <p>“{t.quote}”</p>
-                  <div className="postit-sign font-hand">{t.name}</div>
-                  <div className="postit-role font-typewriter">{t.role}</div>
+                  <div className="postit-person">
+                    <div className="postit-avatar">
+                      <SiteAsset slot={t.asset} sizes="52px" fallbackLabel={initials(t.name)} />
+                    </div>
+                    <div>
+                      <div className="postit-sign font-hand">{t.name}</div>
+                      <div className="postit-role font-typewriter">{t.role}</div>
+                    </div>
+                  </div>
                 </div>
               </Reveal>
             ))}
