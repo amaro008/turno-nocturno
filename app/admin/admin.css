@@ -60,6 +60,7 @@ table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .asset-body { padding: 13px 14px 15px; display: flex; flex-direction: column; gap: 4px; }
 .asset-body b { font-size: 14px; }
 .asset-slot { font-size: 10px; color: var(--amber); letter-spacing: 0.03em; }
+.asset-dims { font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.02em; }
 .asset-desc { font-size: 12px; color: var(--ink-2); line-height: 1.45; margin: 4px 0 0; }
 .asset-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 

@@ -4,6 +4,9 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { sectionForSlot, ASSET_SECTIONS } from '@/lib/domain/site-assets';
+import { getSpec, aspectRatioValue } from '@/lib/domain/image-specs';
+import SpecPanel, { formatMaxSize } from '@/components/SpecPanel';
+import { loadImageMeta, cropToAspect, compressImage } from '@/lib/ui/image-client';
 
 interface Asset {
   slot: string;
@@ -44,6 +47,11 @@ export default function AssetsClient({ assets }: { assets: Asset[] }) {
             <div className="asset-body">
               <b>{a.title}</b>
               <span className="asset-slot mono">{a.slot}</span>
+              {getSpec(a.slot) && (
+                <span className="asset-dims mono">
+                  {getSpec(a.slot)!.width}×{getSpec(a.slot)!.height} · {getSpec(a.slot)!.aspectRatio}
+                </span>
+              )}
               <p className="asset-desc">{a.description}</p>
               <div className="asset-actions">
                 <button className="btn ghost" style={{ padding: '6px 11px', fontSize: 12.5 }} onClick={() => setChanging(a)}>
@@ -69,36 +77,65 @@ export default function AssetsClient({ assets }: { assets: Asset[] }) {
 }
 
 function ChangeImageModal({ asset, onClose, onSaved }: { asset: Asset; onClose: () => void; onSaved: () => void }) {
+  const spec = getSpec(asset.slot);
+  const maxBytes = spec ? spec.maxSizeMB * 1024 * 1024 : MAX;
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
+  const [warn, setWarn] = useState<{ tooSmall: boolean; aspectOff: boolean; oversize: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function pick(f: File) {
+  async function pick(f: File) {
     setError(null);
-    if (f.size > MAX) { setError('Máximo 5 MB'); return; }
+    setWarn(null);
     if (!f.type.startsWith('image/')) { setError('Debe ser una imagen'); return; }
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    if (spec) {
+      try {
+        const meta = await loadImageMeta(f);
+        const target = aspectRatioValue(spec.aspectRatio);
+        const srcRatio = meta.width / meta.height;
+        setWarn({
+          tooSmall: meta.width < spec.minWidth,
+          aspectOff: Math.abs(srcRatio - target) / target > 0.05,
+          oversize: f.size > maxBytes,
+        });
+      } catch {
+        /* si no se puede leer, se sube tal cual */
+      }
+    } else if (f.size > maxBytes) {
+      setError(`Máximo ${formatMaxSize(maxBytes / 1024 / 1024)}`);
+    }
   }
 
   async function save() {
     if (!file) return;
     setBusy(true);
     setError(null);
+    let f = file;
+    // Procesamiento cliente según spec (recorte al aspecto + compresión).
+    if (spec && warn) {
+      try {
+        if (warn.aspectOff) f = await cropToAspect(f, spec);
+        if (f.size > maxBytes) f = await compressImage(f, spec);
+      } catch {
+        /* si el procesamiento falla, sube el original */
+      }
+    }
     try {
       const res = await fetch('/api/admin/assets/upload-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slot: asset.slot, filename: file.name, size: file.size, mime: file.type }),
+        body: JSON.stringify({ slot: asset.slot, filename: f.name, size: f.size, mime: f.type }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error === 'too_large' ? 'Archivo muy grande' : 'No se pudo iniciar la subida'); setBusy(false); return; }
 
       const supabase = createClient();
-      const { error: upErr } = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, file, { contentType: file.type });
+      const { error: upErr } = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, f, { contentType: f.type });
       if (upErr) { setError('Error al subir'); setBusy(false); return; }
 
       const patch = await fetch(`/api/admin/assets/${asset.slot}`, {
@@ -121,6 +158,8 @@ function ChangeImageModal({ asset, onClose, onSaved }: { asset: Asset; onClose: 
         <h2 style={{ margin: '6px 0 2px' }}>{asset.title}</h2>
         <p className="msub">{asset.description}</p>
 
+        {spec && <SpecPanel spec={spec} />}
+
         <div className="ba-grid">
           <div>
             <div className="ba-label mono">Antes</div>
@@ -141,6 +180,15 @@ function ChangeImageModal({ asset, onClose, onSaved }: { asset: Asset; onClose: 
           </div>
         </div>
 
+        {spec && warn?.tooSmall && (
+          <div className="up-warn">⚠ Imagen más chica que lo recomendado ({spec.width}×{spec.height}); puede verse borrosa.</div>
+        )}
+        {spec && warn?.aspectOff && (
+          <div className="up-warn">⚠ La proporción difiere de {spec.aspectRatio}; se recortará automáticamente al centro al guardar.</div>
+        )}
+        {spec && warn?.oversize && (
+          <div className="up-warn">⚠ Pesa más de {formatMaxSize(spec.maxSizeMB)}; se comprimirá automáticamente al guardar.</div>
+        )}
         {error && <div className="note-error" style={{ marginTop: 12 }}>{error}</div>}
 
         <div className="vactions" style={{ marginTop: 16 }}>

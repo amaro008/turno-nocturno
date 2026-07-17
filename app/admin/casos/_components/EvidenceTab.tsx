@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { EvidenceItem, Variant } from '@/lib/domain';
+import { getSpec } from '@/lib/domain/image-specs';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
@@ -130,6 +131,8 @@ function EvidenceCard({
 
   const kind = f.kind ?? 'document';
   const uploadKind = kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'image';
+  const uploadSpec =
+    kind === 'video' ? getSpec('video.vhs_clip') : uploadKind === 'image' ? getSpec('evidence.document') : undefined;
 
   function togglePrereq(code: string) {
     const cur = new Set(f.unlocked_by ?? []);
@@ -224,6 +227,7 @@ function EvidenceCard({
                 value={f.media_path ?? null}
                 onUploaded={(path) => set('media_path', path)}
                 label={kind === 'document' || kind === 'hint' ? 'Imagen (opcional)' : `Archivo de ${kind}`}
+                spec={uploadSpec}
               />
             </div>
 

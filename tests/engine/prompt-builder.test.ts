@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildSuspectPrompt, buildCoverPrompt, buildVideoPrompt } from '@/lib/engine/prompt-builder';
+import { IMAGE_SPECS } from '@/lib/domain/image-specs';
 
 const AD = 'Fotografía noir de 1989, grano fino, claroscuro, paleta desaturada con acento carmín';
 
@@ -31,6 +32,13 @@ describe('buildSuspectPrompt', () => {
   it('omite la línea de rasgos si no hay features', () => {
     const p = buildSuspectPrompt({ name: 'Anónimo' }, AD);
     expect(p).not.toContain('[DISTINCTIVE FEATURES]');
+  });
+
+  it('con spec agrega dimensiones y notas de composición', () => {
+    const p = buildSuspectPrompt(suspect, AD, true, IMAGE_SPECS['suspect.portrait']);
+    expect(p).toContain('[DIMENSIONS] --ar 3:4 (recommended: 800x1067 px)');
+    expect(p).toContain('cara en el tercio superior');
+    expect(p).not.toContain('[ASPECT]');
   });
 });
 

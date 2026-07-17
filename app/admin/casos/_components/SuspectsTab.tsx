@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Suspect } from '@/lib/domain';
+import { getSpec } from '@/lib/domain/image-specs';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
@@ -163,6 +164,7 @@ function SuspectCard({
                 value={f.photo_path ?? null}
                 onUploaded={(path) => set('photo_path', path)}
                 label="Foto (opcional)"
+                spec={getSpec('suspect.portrait')}
               />
             </div>
           </div>

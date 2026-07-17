@@ -1,5 +1,45 @@
 // Genera el Markdown de la "Guía de Arte" de un caso (para content/casos/{slug}/).
 import type { Case, Suspect, CaseVisualPrompt, Variant } from '@/lib/domain';
+import { IMAGE_SPECS, type ImageSpec } from '@/lib/domain/image-specs';
+
+// Slots relevantes para un caso, en orden de aparición.
+const CASE_SPEC_SLOTS = [
+  'case.cover',
+  'case.hero',
+  'suspect.portrait',
+  'evidence.document',
+  'evidence.photo',
+  'evidence.vhs_still',
+  'video.vhs_clip',
+];
+
+function fmtMaxSize(mb: number): string {
+  return mb < 1 ? `${Math.round(mb * 1024)} KB` : `${mb} MB`;
+}
+
+/** Bloque markdown con la tabla de tamaños (un solo string con sus propias líneas en blanco). */
+function dimensionsTableBlock(): string {
+  const specs = CASE_SPEC_SLOTS.map((s) => IMAGE_SPECS[s]).filter(Boolean) as ImageSpec[];
+  const header = '| Asset | Slot | Dimensiones | Proporción | Peso máx | Formatos |\n| --- | --- | --- | --- | --- | --- |';
+  const rows = specs
+    .map(
+      (s) =>
+        `| ${s.label} | \`${s.slot}\` | ${s.width}×${s.height} px | ${s.aspectRatio} | ${fmtMaxSize(
+          s.maxSizeMB,
+        )} | ${s.formats.map((f) => f.toUpperCase()).join(', ')}${s.durationSeconds ? ` · ${s.durationSeconds[0]}–${s.durationSeconds[1]} s` : ''} |`,
+    )
+    .join('\n');
+  const notes = specs
+    .filter((s) => s.notes)
+    .map((s) => `- **${s.label}** (${s.aspectRatio}): ${s.notes}`)
+    .join('\n');
+  return (
+    '## Tamaños de imagen\n\n' +
+    'Dimensiones y formatos recomendados por asset. Incluye el aspecto (`--ar`) en tus prompts y ' +
+    'sube imágenes de al menos el ancho mínimo para evitar que se vean borrosas.\n\n' +
+    `${header}\n${rows}\n\n${notes}\n`
+  );
+}
 
 export function buildArtGuideMarkdown(
   caseRow: Case,
@@ -24,6 +64,7 @@ export function buildArtGuideMarkdown(
     '```',
     `Auto-inyección del estilo en prompts: **${caseRow.art_autoinject ? 'activada' : 'desactivada'}**`,
     '',
+    dimensionsTableBlock(),
     '## Portada del caso',
     '```',
     caseRow.cover_image_prompt || '(sin definir)',

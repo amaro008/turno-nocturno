@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Case } from '@/lib/domain';
+import { getSpec } from '@/lib/domain/image-specs';
 import MediaUploader from './MediaUploader';
 
 export default function MarketingTab({ caseRow }: { caseRow: Case }) {
@@ -44,6 +45,7 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
             value={f.cover_image_path}
             onUploaded={(path) => set('cover_image_path', path)}
             label="Imagen de portada (catálogo y detalle)"
+            spec={getSpec('case.cover')}
           />
         </div>
         <div className="full">
@@ -53,7 +55,8 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
             category="atmosphere"
             value={f.atmosphere_image_path}
             onUploaded={(path) => set('atmosphere_image_path', path)}
-            label="Imagen atmosférica (hero del home)"
+            label="Imagen atmosférica (hero del detalle)"
+            spec={getSpec('case.hero')}
           />
         </div>
 

@@ -14,6 +14,25 @@ nocturna, húmeda, de estación de radio. Realismo fotográfico, nada estilizado
 
 *Auto-inyección del estilo en todos los prompts: activada.*
 
+## Tamaños de imagen
+
+Dimensiones y formatos recomendados por asset. Incluye el aspecto (`--ar`) en tus prompts y sube imágenes de al menos el ancho mínimo para evitar que se vean borrosas.
+
+| Asset | Slot | Dimensiones | Proporción | Peso máx | Formatos |
+| --- | --- | --- | --- | --- | --- |
+| Portada de caso | `case.cover` | 800×1200 px | 2:3 | 410 KB | JPG, WEBP |
+| Hero del caso | `case.hero` | 2400×1000 px | 12:5 | 512 KB | JPG, WEBP |
+| Retrato de sospechoso | `suspect.portrait` | 800×1067 px | 3:4 | 307 KB | JPG, PNG |
+| Documento (evidencia) | `evidence.document` | 1200×1600 px | 3:4 | 410 KB | JPG, PNG, WEBP |
+| Foto de evidencia | `evidence.photo` | 1600×1200 px | 4:3 | 410 KB | JPG, PNG, WEBP |
+| Frame de VHS | `evidence.vhs_still` | 1280×960 px | 4:3 | 358 KB | JPG, WEBP |
+| Clip VHS | `video.vhs_clip` | 1280×960 px | 4:3 | 15 MB | MP4 · 6–8 s |
+
+- **Portada de caso** (2:3): Composición vertical (póster); elemento central visible con márgenes de 8% arriba y abajo para que el clip decorativo no cubra información.
+- **Hero del caso** (12:5): Composición panorámica, foco en la atmósfera del lugar.
+- **Retrato de sospechoso** (3:4): Encuadre medio-corto, cara en el tercio superior, hombros visibles. Los rasgos distintivos DEBEN quedar dentro del encuadre (tatuajes de cuello, cicatrices, lentes). Fondo neutro tipo estudio. Sujeto mirando ligeramente a un lado, expresión neutra o sombría. NO pose de modelo, NO sonrisa.
+- **Clip VHS** (4:3): Aspecto 4:3 obligatorio, grano de VHS pesado, timestamp quemado en overlay.
+
 ## Portada del caso (--ar 3:4)
 ```
 [SCENE] Cabina de radio a oscuras, micrófono de pedestal volcado sobre la consola, luz roja de "AL AIRE" apagada, cinta de casete desenrollada.

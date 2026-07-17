@@ -2,7 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { buildSuspectPrompt, buildCoverPrompt, buildHeroPrompt } from '@/lib/engine/prompt-builder';
+import { getSpec, IMAGE_SPECS, type ImageSpec } from '@/lib/domain/image-specs';
+import { formatMaxSize } from '@/components/SpecPanel';
 import MediaUploader from './MediaUploader';
+
+/** Slots relevantes para un caso, en orden de aparición. */
+const CASE_SPEC_SLOTS = [
+  'case.cover',
+  'case.hero',
+  'suspect.portrait',
+  'evidence.document',
+  'evidence.photo',
+  'evidence.vhs_still',
+  'video.vhs_clip',
+];
 
 interface ArtSuspect {
   id: string;
@@ -101,7 +114,8 @@ export default function ArtDirectionTab({ slug }: { slug: string }) {
           imagePath={data.case.cover_image_path}
           uploadCategory="cover"
           casePathField="cover_image_path"
-          builder={(scene) => buildCoverPrompt(scene, ad, inject)}
+          specSlot="case.cover"
+          builder={(scene) => buildCoverPrompt(scene, ad, inject, getSpec('case.cover'))}
           copy={copy}
           copied={copied}
           onChanged={load}
@@ -114,7 +128,8 @@ export default function ArtDirectionTab({ slug }: { slug: string }) {
           imagePath={data.case.atmosphere_image_path}
           uploadCategory="atmosphere"
           casePathField="atmosphere_image_path"
-          builder={(scene) => buildHeroPrompt(scene, ad, inject)}
+          specSlot="case.hero"
+          builder={(scene) => buildHeroPrompt(scene, ad, inject, getSpec('case.hero'))}
           copy={copy}
           copied={copied}
           onChanged={load}
@@ -141,9 +156,15 @@ export default function ArtDirectionTab({ slug }: { slug: string }) {
         <VisualPrompts slug={slug} visuals={data.visualPrompts} variants={data.variants} copy={copy} copied={copied} onChanged={load} />
       </section>
 
-      {/* ============ Sección 5: checklist ============ */}
+      {/* ============ Sección 5: referencia de tamaños ============ */}
       <section className="art-sec">
-        <h3 className="art-h">5 · Checklist de assets</h3>
+        <h3 className="art-h">5 · Referencia de tamaños</h3>
+        <SizeReference caseTitle={data.case.title} />
+      </section>
+
+      {/* ============ Sección 6: checklist ============ */}
+      <section className="art-sec">
+        <h3 className="art-h">6 · Checklist de assets</h3>
         <div className="art-checklist">
           <div className="art-progress">
             <b className="mono">{done}</b> de <b className="mono">{items.length}</b> assets con imagen generada
@@ -221,6 +242,7 @@ function MainImage(props: {
   imagePath: string | null;
   uploadCategory: string;
   casePathField: 'cover_image_path' | 'atmosphere_image_path';
+  specSlot: string;
   builder: (scene: string) => string;
   copy: (t: string, k: string) => void;
   copied: string | null;
@@ -259,6 +281,7 @@ function MainImage(props: {
           category={props.uploadCategory}
           value={props.imagePath}
           label="Subir asset generado"
+          spec={getSpec(props.specSlot)}
           onUploaded={async (path) => {
             await fetch(`/api/admin/cases/${props.slug}`, {
               method: 'PATCH',
@@ -301,6 +324,7 @@ function SuspectArt({
         { name: suspect.name, age: suspect.age, occupation: suspect.occupation, physical_description: phys, distinctive_features: feat },
         artDirection,
         inject,
+        getSpec('suspect.portrait'),
       ),
     );
   }
@@ -344,6 +368,7 @@ function SuspectArt({
           category="sospechosos"
           value={suspect.photo_path}
           label="Subir foto generada"
+          spec={getSpec('suspect.portrait')}
           onUploaded={async (path) => {
             await fetch(`/api/admin/cases/${slug}/suspects`, {
               method: 'POST',
@@ -353,6 +378,77 @@ function SuspectArt({
             onChanged();
           }}
         />
+      </div>
+    </div>
+  );
+}
+
+function SizeReference({ caseTitle }: { caseTitle: string }) {
+  const specs = CASE_SPEC_SLOTS.map((s) => IMAGE_SPECS[s]).filter(Boolean) as ImageSpec[];
+
+  function download() {
+    const rows = specs
+      .map(
+        (s) =>
+          `| ${s.label} | \`${s.slot}\` | ${s.width}×${s.height} px | ${s.aspectRatio} | ${formatMaxSize(
+            s.maxSizeMB,
+          )} | ${s.formats.map((f) => f.toUpperCase()).join(', ')}${s.durationSeconds ? ` · ${s.durationSeconds[0]}–${s.durationSeconds[1]} s` : ''} |`,
+      )
+      .join('\n');
+    const md =
+      `# Guía de tamaños — ${caseTitle}\n\n` +
+      `Dimensiones y formatos recomendados para cada asset del caso. Al generar con IA, incluye el aspecto ` +
+      `(\`--ar\`) y respeta el ancho mínimo para evitar imágenes borrosas.\n\n` +
+      `| Asset | Slot | Dimensiones | Proporción | Peso máx | Formatos |\n` +
+      `| --- | --- | --- | --- | --- | --- |\n${rows}\n\n` +
+      specs
+        .filter((s) => s.notes)
+        .map((s) => `- **${s.label}** (${s.aspectRatio}): ${s.notes}`)
+        .join('\n') +
+      '\n';
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'guia-de-tamanos.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div>
+      <p className="field-hint" style={{ marginTop: -6 }}>
+        Tamaños esperados por asset. Copia el aspecto en tus prompts de IA y sube imágenes de al menos el ancho mínimo.
+      </p>
+      <div className="size-table-wrap">
+        <table className="size-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Dimensiones</th>
+              <th>Proporción</th>
+              <th>Peso máx</th>
+              <th>Formatos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {specs.map((s) => (
+              <tr key={s.slot}>
+                <td>
+                  {s.label}
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>{s.slot}</div>
+                </td>
+                <td className="mono">{s.width}×{s.height}{s.durationSeconds ? ` · ${s.durationSeconds[0]}–${s.durationSeconds[1]}s` : ''}</td>
+                <td className="mono">{s.aspectRatio}</td>
+                <td className="mono">{formatMaxSize(s.maxSizeMB)}</td>
+                <td className="mono">{s.formats.map((f) => f.toUpperCase()).join(' · ')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="row-actions" style={{ marginTop: 12 }}>
+        <button className="btn ghost" onClick={download}>Descargar guía de tamaños</button>
       </div>
     </div>
   );
@@ -513,6 +609,7 @@ function VisualCard({
               category={'assets/' + (f.slot_name || 'slot')}
               value={f.generated_asset_path}
               label="Subir asset generado"
+              spec={getSpec(f.media_kind === 'video' ? 'video.vhs_clip' : f.slot_name.includes('vhs') ? 'evidence.vhs_still' : 'evidence.photo')}
               onUploaded={(path) => { set('generated_asset_path', path); onSave({ slot_name: f.slot_name, media_kind: f.media_kind, variant_id: f.variant_id, prompt: f.prompt, negative_prompt: f.negative_prompt, technical_params: { raw: f.params }, reference_notes: f.reference_notes, status: 'generated', generated_asset_path: path }); }}
             />
           </div>

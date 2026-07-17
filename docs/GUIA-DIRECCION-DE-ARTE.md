@@ -52,8 +52,46 @@ Cada slot tiene `prompt`, `negative_prompt`, `technical_params` (ej. `--ar 16:9 
    imagen → "Subir foto generada".
 3. Genera **portada** y **hero**; súbelas.
 4. Agrega los **slots visuales** (escena, VHS por variante…), copia el prompt completo, genera y sube.
-5. Revisa el **checklist** (sección 5): no dejes el caso `active` con assets faltantes.
-6. Descarga **`GUIA-DE-ARTE.md`** como respaldo del caso (se guarda en `content/casos/{slug}/`).
+5. Consulta la **Referencia de tamaños** (sección 5 del tab) para cada asset antes de generar.
+6. Revisa el **checklist** (sección 6): no dejes el caso `active` con assets faltantes.
+7. Descarga **`GUIA-DE-ARTE.md`** como respaldo del caso (se guarda en `content/casos/{slug}/`).
+
+## Tamaños de imagen (fuente de verdad)
+Todas las dimensiones esperadas viven en un registro central, **`lib/domain/image-specs.ts`**
+(`IMAGE_SPECS`). Cada uploader del sitio muestra un **panel de especificaciones** (dimensiones,
+proporción, peso máximo, formatos, notas) y un botón **"Copiar dimensiones para IA"** que copia
+algo como `--ar 3:4 (800x1067)` al portapapeles. Al soltar una imagen fuera de spec, el uploader:
+
+- **Avisa** (no bloquea) si el ancho es menor al mínimo → puede verse borrosa.
+- **Avisa** si la proporción difiere >5% del objetivo → ofrece **"Recortar y subir"** (recorte
+  centrado al aspecto correcto) o **"Subir así"**.
+- **Comprime** automáticamente si pesa más del máximo.
+
+Los prompts autogenerados incluyen las dimensiones al final, en un bloque
+`[DIMENSIONS] --ar 3:4 (recommended: 800x1067 px) --s 250`.
+
+| Asset | Slot | Dimensiones | Proporción | Ancho mín | Peso máx | Formatos |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hero del landing | `landing.hero` | 2400×1200 px | 16:9 | 1600 px | 512 KB | JPG, WEBP |
+| Paso 1 | `landing.how_step_1` | 1200×900 px | 4:3 | 800 px | 307 KB | JPG, WEBP |
+| Paso 2 | `landing.how_step_2` | 1200×900 px | 4:3 | 800 px | 307 KB | JPG, WEBP |
+| Paso 3 | `landing.how_step_3` | 1200×900 px | 4:3 | 800 px | 307 KB | JPG, WEBP |
+| Avatar testimonio 1 | `landing.testimonial_1_avatar` | 400×400 px | 1:1 | 240 px | 154 KB | JPG, WEBP, PNG |
+| Avatar testimonio 2 | `landing.testimonial_2_avatar` | 400×400 px | 1:1 | 240 px | 154 KB | JPG, WEBP, PNG |
+| Avatar testimonio 3 | `landing.testimonial_3_avatar` | 400×400 px | 1:1 | 240 px | 154 KB | JPG, WEBP, PNG |
+| Estado vacío del catálogo | `catalog.empty_state` | 800×800 px | 1:1 | 400 px | 205 KB | JPG, WEBP, PNG |
+| Imagen de "Cómo funciona" | `como_funciona.hero` | 2400×1000 px | 12:5 | 1600 px | 512 KB | JPG, WEBP |
+| Foto del equipo | `about.team_photo` | 1600×900 px | 16:9 | 1000 px | 410 KB | JPG, WEBP |
+| Portada de caso | `case.cover` | 800×1200 px | 2:3 | 600 px | 410 KB | JPG, WEBP |
+| Hero del caso | `case.hero` | 2400×1000 px | 12:5 | 1600 px | 512 KB | JPG, WEBP |
+| Retrato de sospechoso | `suspect.portrait` | 800×1067 px | 3:4 | 600 px | 307 KB | JPG, PNG |
+| Documento (evidencia) | `evidence.document` | 1200×1600 px | 3:4 | 900 px | 410 KB | JPG, PNG, WEBP |
+| Foto de evidencia | `evidence.photo` | 1600×1200 px | 4:3 | 1000 px | 410 KB | JPG, PNG, WEBP |
+| Frame de VHS | `evidence.vhs_still` | 1280×960 px | 4:3 | 800 px | 358 KB | JPG, WEBP |
+| Clip VHS | `video.vhs_clip` | 1280×960 px | 4:3 | 960 px | 15 MB | MP4 · 6–8 s |
+
+> Para cambiar un tamaño, edita **solo** `lib/domain/image-specs.ts`: uploaders, paneles,
+> prompts, tabla del tab "Dirección de Arte" y la guía descargable se actualizan solos.
 
 ## Nota técnica
 La generación del archivo `content/casos/{slug}/GUIA-DE-ARTE.md` en runtime no persiste en

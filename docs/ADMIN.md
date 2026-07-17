@@ -167,6 +167,28 @@ CMS ligero para cambiar las imágenes del landing y marketing **sin tocar códig
 - Veredicto capturado (si existe)
 - Acciones (activas): extender tiempo (justificación requerida), cancelar sesión, forzar evento
 
+## Tamaños de imagen
+Cada punto del admin donde se sube una imagen muestra un **panel de especificaciones** con las
+dimensiones esperadas, la proporción, el peso máximo y los formatos, más un botón **"Copiar
+dimensiones para IA"**. La fuente de verdad es `lib/domain/image-specs.ts` (`IMAGE_SPECS`); para
+cambiar un tamaño se edita ahí y todo lo demás se actualiza solo.
+
+**Comportamiento al subir fuera de spec** (avisa, no bloquea):
+- Ancho menor al mínimo → aviso de posible imagen borrosa.
+- Proporción distinta (>5%) → **"Recortar y subir"** (recorte centrado) o **"Subir así"**.
+- Peso mayor al máximo → compresión automática antes de subir.
+
+**Dónde aparece:**
+- **Casos → Marketing:** portada (`case.cover`) y hero (`case.hero`).
+- **Casos → Sospechosos:** foto (`suspect.portrait`).
+- **Casos → Evidencia:** imagen de documento (`evidence.document`) y video (`video.vhs_clip`).
+- **Casos → Dirección de Arte:** todos los uploaders + sección **"Referencia de tamaños"** con
+  la tabla del caso y botón **"Descargar guía de tamaños"** (Markdown).
+- **Biblioteca de Assets (`/admin/assets`):** cada tarjeta muestra `dimensiones · proporción` y el
+  modal de cambio de imagen incluye el panel de spec y las validaciones.
+
+La tabla completa por slot vive en `docs/GUIA-DIRECCION-DE-ARTE.md → "Tamaños de imagen"`.
+
 ## Emails transaccionales enviados desde admin
 1. **Código creado y enviado:** "Tu código para [caso]" + botón "Canjear"
 2. **Reenvío de código:** misma plantilla, aclara "reenvío solicitado"
