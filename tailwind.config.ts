@@ -22,10 +22,20 @@ const config: Config = {
         'amber-2': 'var(--amber-2)',
         teal: 'var(--teal)',
         alert: 'var(--alert)',
+        // Paleta noir (Iteración 3, Fase 2)
+        'paper-manila': 'var(--paper-manila)',
+        'ink-black': 'var(--ink-black)',
+        'stamp-red': 'var(--stamp-red)',
+        'stamp-red-faded': 'var(--stamp-red-faded)',
+        'evidence-yellow': 'var(--evidence-yellow)',
+        'noir-navy': 'var(--noir-navy)',
+        'smoke-gray': 'var(--smoke-gray)',
       },
       fontFamily: {
         ui: 'var(--font-ui)',
         mono: 'var(--font-mono)',
+        typewriter: 'var(--font-typewriter-stack)',
+        editorial: 'var(--font-editorial-stack)',
       },
       maxWidth: {
         content: '1140px',

@@ -1,5 +1,20 @@
 import type { Metadata, Viewport } from 'next';
+import { Courier_Prime, Playfair_Display } from 'next/font/google';
 import './globals.css';
+
+// Tipografías noir (Iteración 3, Fase 2)
+const typewriter = Courier_Prime({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-typewriter',
+  display: 'swap',
+});
+const editorial = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-editorial',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Turno Nocturno — Reabre el caso',
@@ -19,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${typewriter.variable} ${editorial.variable}`}>
       <body>{children}</body>
     </html>
   );

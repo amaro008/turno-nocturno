@@ -192,8 +192,21 @@ turno-nocturno/
 │   ├── AppHeader.tsx                       # Header autenticado (biblioteca/admin)
 │   ├── AtmoImage.tsx                       # <img> con respaldo (Unsplash → picsum)
 │   ├── Initials.tsx                        # Placeholders con iniciales sobre gradiente (Fase 5)
+│   ├── GradientPlaceholder.tsx             # Fallback gradiente de <SiteAsset> (it3 F1)
+│   ├── SiteAsset.tsx                        # Resuelve slot de site_assets → next/image (it3 F1)
 │   ├── Skeleton.tsx                        # Skeletons de carga (Fase 5)
-│   └── EmptyState.tsx                      # Estado vacío con ilustración (Fase 5)
+│   ├── EmptyState.tsx                      # Estado vacío con ilustración (Fase 5)
+│   └── noir/                               # Sistema visual noir (it3 F2)
+│       ├── noir.css                        #   estilos de componentes + home noir
+│       ├── ConfidentialStamp.tsx           #   sello de tinta (variantes)
+│       ├── PaperclipCorner.tsx             #   clip metálico SVG
+│       ├── ManillaFolder.tsx               #   folder de expediente que envuelve contenido
+│       ├── TypewriterText.tsx              #   texto a máquina (cursor; sonido opcional)
+│       ├── FilingCabinet.tsx               #   archivero con cajones clickeables
+│       ├── CoffeeStain.tsx                 #   mancha de café SVG
+│       ├── RedString.tsx                   #   hilo rojo entre puntos (conspiration board)
+│       ├── InkSplotch.tsx                  #   mancha de tinta
+│       └── Reveal.tsx                      #   fade + rise al entrar en viewport (Framer)
 │
 │   # Fase 5 extra: app/robots.ts, app/(marketing)/opengraph-image.tsx,
 │   # loading.tsx (skeletons) en /casos, /mi-biblioteca y /s/[code],
