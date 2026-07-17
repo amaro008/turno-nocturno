@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/server/supabase';
 import { computeCodeTiming } from '@/lib/engine/code-lifecycle';
 import { AccessCodeStatus } from '@/lib/domain';
@@ -42,11 +43,12 @@ export default async function BibliotecaPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
 
   const { data } = await supabase
     .from('access_codes')
     .select('id, code, status, created_at, sent_at, activated_at, cases(title, city, era_year, slug)')
-    .eq('user_id', user!.id)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   const codes = (data ?? []) as unknown as CodeRow[];
