@@ -157,6 +157,7 @@ export interface GameSession {
   activated_at: string | null;
   expires_at: string | null;
   hints_used: number;
+  player_notes: string;
 }
 
 // ---- Mensajes del chat ----

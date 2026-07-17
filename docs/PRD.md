@@ -69,20 +69,32 @@ sesión → veredicto) con 3-5 mesas reales; medir intención de recompra.
 - RF-U05 Dashboard "Mi biblioteca" con códigos y sesiones del usuario
 - RF-U06 Canje de código: input, validación, si es válido queda en biblioteca
 
-### Sesión de juego (heredado y refinado de v0.3)
-- RF-S01 Activación de sesión desde la biblioteca (no por landing con código en URL)
-- RF-S02 Sorteo de variante al activar (uniforme entre `variants WHERE active`)
-- RF-S03 Chat Comandante: streaming SSE, "escribiendo…", historial persistido
+### Sesión de juego (refinado en Fase 3–4)
+- RF-S01 **Briefing** antes de arrancar: leer caso y sospechosos; el reloj y el sorteo de
+  variante ocurren al confirmar "INICIAR TURNO NOCTURNO" (no al salir de biblioteca)
+- RF-S02 Sorteo de variante al confirmar el inicio (uniforme entre `variants WHERE active`)
+- RF-S03 Chat Comandante: streaming SSE, "escribiendo…", historial persistido; input textarea
+  (Enter envía, Shift+Enter salta línea)
 - RF-S04 Notas de voz (pregrabadas + generadas) con UI de mensajería
 - RF-S05 Adjuntos de evidencia como tarjetas dentro del chat
 - RF-S06 Motor de eventos temporales por caso (idempotente, sobrevive recargas)
-- RF-S07 Cuenta regresiva visible; al llegar a 0, Comandante exige veredicto
-- RF-S08 Vista Expediente con tabs
+- RF-S07 **Cronómetro grande H:MM:SS con color por umbral**: verde (>60 min), ámbar (30–60),
+  rojo pulsando (<30); visible en la barra superior
+- RF-S08 **Consola de 3 zonas**: barra superior (caso + cronómetro + cerrar caso), zona central
+  (chat 40% / Expediente 60%) y barra inferior (pistas + pedir pista + cerrar caso)
+- RF-S08b **Expediente con 6 tabs**: Sospechosos (fichas + modal + descartar local),
+  Documentos (visor markdown), Audios (player + transcripción), Videos (player restringido),
+  Mis notas (auto-guardado en `sessions.player_notes`), Códigos (desbloqueo + historial)
+- RF-S08c **Notificaciones de evidencia nueva**: badge rojo por tab + toast "Nueva evidencia: …"
 - RF-S09 Desbloqueo por código de evidencia (compatibilidad con dinámica de códigos impresos)
 - RF-S10 Sistema de pistas (3 niveles, resta puntuación)
 - RF-S11 Guardarraíles del Comandante (chat no conoce culprit; evaluación aislada)
 - RF-S12 Veredicto → evaluación → resolución narrada
-- RF-S13 Reanudación tras recarga
+- RF-S13 Reanudación tras recarga (chat, evidencia, tiempo, pistas y notas persisten)
+- RF-S14 **Protección anti-descarga** (fricción razonable): URLs firmadas TTL 10 min,
+  `user-select:none` y menú contextual bloqueado en el Expediente, media con
+  `controlsList="nodownload noremoteplayback"` + `disablePictureInPicture`, marca de agua con
+  código de sesión y fecha, `referrer: no-referrer`. Impresión deferida a V1.
 
 ### Administración (nuevos en v0.4)
 - RF-A01 Middleware que restringe rutas `/admin/*` a usuarios con `role='admin'`

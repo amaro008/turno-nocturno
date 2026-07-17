@@ -75,10 +75,23 @@ El reloj ya **no** arranca al salir de la biblioteca. Hay un paso de preparació
 > Idempotente: si el código ya está `activated`/`in_progress`, tanto el briefing como
 > la API mandan directo al portal de juego sin recrear nada.
 
-## Flujo 4 — Sesión de juego (bucle principal)
+## Flujo 4 — Sesión de juego · consola de detective (Fase 4)
+La consola es una **mesa de detective**, no solo un chat. Layout de 3 zonas:
+- **Barra superior:** caso + ciudad/época; **cronómetro grande H:MM:SS** con color por umbral
+  (verde >60 min, ámbar 30–60, rojo pulsando <30); botón "Cerrar el caso".
+- **Zona central:** chat del Comandante (40%) + Expediente por 6 tabs (60%):
+  Sospechosos (fichas con modal + "descartar" local), Documentos (visor markdown protegido),
+  Audios (player con ±10 s y transcripción), Videos (player restringido), Mis notas
+  (auto-guardado cada 5 s en `sessions.player_notes`), Códigos (desbloqueo + historial).
+- **Barra inferior:** contador de pistas, "Pedir pista" y "Cerrar el caso".
+Cuando llega evidencia nueva: **badge rojo** en el tab + **toast** "Nueva evidencia: …".
+Protección anti-descarga: URLs firmadas TTL 10 min, anti-selección/menú contextual, marca de
+agua con código de sesión, `controlsList`/`disablePictureInPicture`, `referrer:no-referrer`.
+
+### Bucle principal
 1. Jugadores leen evidencia desde chat o Expediente
-2. Interrogan al Comandante escribiendo → streaming SSE
-3. Piden evidencia → si gating permite, llega como tarjeta
+2. Interrogan al Comandante escribiendo (Enter envía) → streaming SSE
+3. Piden evidencia → si gating permite, llega como tarjeta (y aparece en su tab del Expediente)
 4. Códigos impresos/descubiertos también desbloquean evidencia (input en Expediente)
 5. **Eventos temporales del Caso 001:**
    - min 45: peritaje nuevo (según variante)

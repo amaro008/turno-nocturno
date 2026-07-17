@@ -18,14 +18,17 @@ export const UPLOAD_LIMITS = {
 
 export type UploadKind = keyof typeof UPLOAD_LIMITS;
 
-/** URL firmada de lectura, o null si no hay path o falla. */
-export async function signedUrl(path: string | null): Promise<string | null> {
+/** URL firmada de lectura, o null si no hay path o falla. TTL configurable. */
+export async function signedUrl(path: string | null, ttlSeconds = READ_TTL_SECONDS): Promise<string | null> {
   if (!path) return null;
   const supabase = createServiceClient();
-  const { data, error } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, READ_TTL_SECONDS);
+  const { data, error } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, ttlSeconds);
   if (error || !data) return null;
   return data.signedUrl;
 }
+
+/** TTL corto para media servida dentro de una sesión activa (anti-descarga). */
+export const SESSION_MEDIA_TTL = 10 * 60;
 
 /** Sanitiza un nombre de archivo para usarlo como parte de una ruta de storage. */
 export function safeFilename(name: string): string {

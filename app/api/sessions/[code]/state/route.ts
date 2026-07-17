@@ -8,6 +8,7 @@ import {
   processDueEvents,
   toPublicEvidence,
 } from '@/lib/server/game';
+import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { secondsRemaining } from '@/lib/engine/timeline';
 import { MAX_HINTS } from '@/lib/domain';
 
@@ -25,17 +26,30 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
 
   const svc = createServiceClient();
 
-  const [{ data: rawMessages }, catalog, deliveredCodes, { data: variantRows }, { data: verdict }] =
+  const [{ data: rawMessages }, catalog, deliveredCodes, { data: suspectRows }, { data: verdict }] =
     await Promise.all([
       svc.from('chat_messages').select('*').eq('session_id', ctx.session.id).order('at', { ascending: true }),
       getCatalog(ctx.caseRow.id, ctx.variant.id),
       getDeliveredCodes(ctx.session.id),
-      svc.from('variants').select('culprit').eq('case_id', ctx.caseRow.id),
+      svc
+        .from('suspects')
+        .select('id, name, age, occupation, relation, description, alibi, photo_path')
+        .eq('case_id', ctx.caseRow.id)
+        .order('sort_order', { ascending: true }),
       svc.from('verdicts').select('*').eq('session_id', ctx.session.id).maybeSingle(),
     ]);
 
   const deliveredSet = new Set(deliveredCodes);
-  const byCode = new Map(catalog.map((e) => [e.code, toPublicEvidence(e)]));
+
+  // Evidencia entregada, con URL de media firmada a 10 min (anti-descarga).
+  const deliveredItems = catalog.filter((e) => deliveredSet.has(e.code));
+  const evidence = await Promise.all(
+    deliveredItems.map(async (e) => ({
+      ...toPublicEvidence(e),
+      mediaUrl: await signedUrl(e.media_path, SESSION_MEDIA_TTL),
+    })),
+  );
+  const evByCode = new Map(evidence.map((e) => [e.code, e]));
 
   const messages = (rawMessages ?? []).map((m) => ({
     id: m.id,
@@ -45,11 +59,22 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     content: m.content,
     voice_path: m.voice_path,
     evidence_code: m.evidence_code,
-    evidence: m.evidence_code ? byCode.get(m.evidence_code) ?? null : null,
+    evidence: m.evidence_code ? evByCode.get(m.evidence_code) ?? null : null,
   }));
 
-  const evidence = catalog.filter((e) => deliveredSet.has(e.code)).map(toPublicEvidence);
-  const suspects = Array.from(new Set((variantRows ?? []).map((v) => v.culprit))).filter(Boolean);
+  // Sospechosos completos (con foto firmada). Material de investigación, no la solución.
+  const suspects = await Promise.all(
+    (suspectRows ?? []).map(async (s) => ({
+      id: s.id,
+      name: s.name,
+      age: s.age,
+      occupation: s.occupation,
+      relation: s.relation,
+      description: s.description,
+      alibi: s.alibi,
+      photoUrl: await signedUrl(s.photo_path, SESSION_MEDIA_TTL),
+    })),
+  );
 
   const secs = ctx.session.activated_at
     ? secondsRemaining(ctx.session.activated_at, ctx.caseRow.time_limit_min)
@@ -61,6 +86,7 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     secondsRemaining: secs,
     hintsUsed: ctx.session.hints_used,
     maxHints: MAX_HINTS,
+    playerNotes: ctx.session.player_notes ?? '',
     case: {
       title: ctx.caseRow.title,
       city: ctx.caseRow.city,
@@ -71,7 +97,6 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     evidence,
     suspects,
     verdict: verdict ?? null,
-    // La narrativa solo se revela cuando la sesión ya tiene veredicto.
     resolvedNarrative: verdict ? ctx.variant.solution_narrative : null,
     resolvedCulprit: verdict ? ctx.variant.culprit : null,
   });

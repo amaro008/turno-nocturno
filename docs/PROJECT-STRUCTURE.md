@@ -50,39 +50,24 @@ turno-nocturno/
 │   │       └── RedeemForm.tsx
 │   │
 │   ├── s/[code]/                   # Portal de sesión de juego
-│   │   ├── layout.tsx              # Barra superior + countdown resolución
-│   │   ├── page.tsx                # Chat + Expediente
-│   │   ├── loading.tsx             # Secuencia CRT de encendido
-│   │   ├── error.tsx
-│   │   ├── _components/
-│   │   │   ├── chat/
-│   │   │   │   ├── ChatWindow.tsx
-│   │   │   │   ├── MessageBubble.tsx
-│   │   │   │   ├── VoiceNote.tsx
-│   │   │   │   ├── EvidenceCard.tsx
-│   │   │   │   ├── TypingIndicator.tsx
-│   │   │   │   ├── ChatInput.tsx
-│   │   │   │   └── useChat.ts
-│   │   │   ├── expediente/
-│   │   │   │   ├── ExpedienteTabs.tsx
-│   │   │   │   ├── DocumentViewer.tsx
-│   │   │   │   ├── AudioPlayer.tsx
-│   │   │   │   ├── VideoPlayer.tsx
-│   │   │   │   ├── SuspectCard.tsx
-│   │   │   │   ├── NotesBoard.tsx
-│   │   │   │   └── EvidenceCodeInput.tsx
-│   │   │   ├── countdown/
-│   │   │   │   └── CountdownBar.tsx
-│   │   │   ├── verdict/
-│   │   │   │   ├── VerdictDialog.tsx
-│   │   │   │   ├── VerdictForm.tsx
-│   │   │   │   └── ResolutionScreen.tsx
-│   │   │   └── shared/
-│   │   │       ├── SessionHeader.tsx
-│   │   │       └── HintButton.tsx
-│   │   └── _providers/
-│   │       ├── SessionProvider.tsx
-│   │       └── RealtimeProvider.tsx        # Sembrado para V1
+│   │   ├── session.css            # Estilos de la consola (3 zonas, tabs, players…)
+│   │   ├── page.tsx                # Server: valida sesión → SessionApp (referrer:no-referrer)
+│   │   ├── briefing/              # Fase 3 — preparación antes de arrancar el reloj
+│   │   │   ├── page.tsx           #   caso + sospechosos + reglas + recomendaciones
+│   │   │   ├── StartTurnButton.tsx#   "INICIAR TURNO NOCTURNO" → POST /api/sessions/activate
+│   │   │   └── briefing.css
+│   │   └── _components/           # Fase 4 — consola enriquecida
+│   │       ├── SessionApp.tsx     # Orquestador: barra sup, chat 40%, expediente 60%, barra inf
+│   │       ├── types.ts           # Tipos espejo de /state
+│   │       ├── markdown.tsx       # Render Markdown mínimo y seguro
+│   │       ├── useNewEvidenceNotification.ts  # Badges por tab + toasts
+│   │       └── expediente/
+│   │           ├── SuspectsGrid.tsx        # Grid + modal de ficha + descartar (local)
+│   │           ├── DocumentsList.tsx       # Lista + visor con marca de agua / anti-descarga
+│   │           ├── AudioPlayer.tsx         # Controles (±10s) + transcripción
+│   │           ├── VideoPlayer.tsx         # controlsList + disablePictureInPicture
+│   │           ├── NotesBoard.tsx          # Auto-guardado en sessions.player_notes
+│   │           └── EvidenceCodeInput.tsx   # Desbloqueo por código + historial
 │   │
 │   ├── admin/                      # Panel de administración (solo role=admin)
 │   │   ├── layout.tsx              # Sidebar + header admin

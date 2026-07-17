@@ -5,7 +5,11 @@ import { getSessionByCode } from '@/lib/server/game';
 import SessionApp from './_components/SessionApp';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Sesión · Turno Nocturno' };
+export const metadata = {
+  title: 'Sesión · Turno Nocturno',
+  referrer: 'no-referrer' as const,
+  robots: { index: false, follow: false },
+};
 
 export default async function SessionPage({ params }: { params: { code: string } }) {
   const user = await getAuthedUser();

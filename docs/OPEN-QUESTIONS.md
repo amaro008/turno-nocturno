@@ -12,6 +12,11 @@
 6. Modelo Anthropic exacto para runtime: sonnet vs opus (medir latencia y calidad)
 7. Aviso de privacidad y términos: revisión legal antes de cobrar (borrador base con plantilla LFPDPPP)
 8. ¿Marca visual del panel admin diferente del portal público, o mismo brand? (recomendado: mismo brand)
+9. **Impresión de evidencia (deferida a V1, Fase 4):** en MVP NO se habilita impresión. Decisión
+   pendiente: ¿imprimir a PDF con marca de agua (código de sesión + fecha), o solo un "modo
+   lectura fácil" a pantalla completa para leer en pantalla sin descargar? Trade-off: la impresión
+   mejora la mesa presencial pero abre un vector de fuga de la evidencia (que en MVP se protege con
+   URLs firmadas de TTL corto, anti-selección, anti-menú-contextual y marca de agua).
 
 ## Riesgos identificados
 - R1: extracción social del culprit → arquitectura lo impide; medir intentos
