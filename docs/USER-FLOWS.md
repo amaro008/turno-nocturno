@@ -4,6 +4,26 @@
 
 ---
 
+## Flujo P — Descubrimiento público (Fase 2)
+Páginas públicas sin autenticación, con identidad visual e imágenes.
+1. **Home (`/`)** — hero con imagen atmosférica + tagline "Reabre casos. Interroga
+   sospechosos. Encuentra al culpable antes que el reloj llegue a cero." CTA "Ver casos" /
+   "Cómo funciona". Secciones: cómo funciona (3 pasos ilustrados), casos disponibles
+   (jala de `cases WHERE active`), testimonios, footer con legales/redes/contacto.
+2. **Catálogo (`/casos`)** — grid de casos activos con portada, ciudad+año, dificultad y
+   precio de referencia. Filtros por ciudad, época y dificultad. "Ver detalles".
+3. **Detalle (`/casos/[slug]`)** — hero con portada, `marketing_synopsis` (sin spoilers),
+   ficha (ciudad, año, duración, jugadores 2–6, dificultad, precio), "Qué necesitas", y CTA:
+   - No autenticado → **"Comprar caso"** lleva a `/registro`.
+   - Autenticado → **"Pedir mi código por WhatsApp"** (en MVP los códigos se entregan a mano).
+   - NUNCA muestra sospechosos ni evidencia (anti-spoiler): los datos sensibles no salen del servidor.
+4. **Cómo funciona (`/como-funciona`)** — explicación larga con imágenes, demo del chat del
+   Comandante y FAQ en acordeón.
+
+> Imágenes: en el piloto se usan placeholders (Unsplash con respaldo garantizado). El admin
+> puede subir portada (`cover_image_path`) y atmósfera (`atmosphere_image_path`) por caso;
+> se sirven con URL firmada del bucket privado `media`.
+
 ## Flujo 0 — Admin genera y envía código (arranca el ciclo comercial)
 1. Cesar recibe transferencia offline (SPEI, efectivo)
 2. Entra a `/admin/codigos/nuevo`

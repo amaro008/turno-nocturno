@@ -35,9 +35,23 @@ export interface Case {
   briefing_voice_path: string | null;
   price_ref_mxn: number | null;
   validation_matrix: ValidationMatrix;
+  cover_image_path: string | null;
+  atmosphere_image_path: string | null;
+  marketing_synopsis: string | null;
+  difficulty: CaseDifficulty;
+  players_min: number;
+  players_max: number;
   active: boolean;
   created_at: string;
 }
+
+export type CaseDifficulty = 'facil' | 'medio' | 'dificil';
+
+export const DIFFICULTY_LABEL: Record<CaseDifficulty, string> = {
+  facil: 'Fácil',
+  medio: 'Medio',
+  dificil: 'Difícil',
+};
 
 /** Matriz de validación documental: evidenceCode → variantCode → celda */
 export type ValidationMatrix = Record<

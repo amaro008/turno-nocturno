@@ -20,8 +20,26 @@ export const caseGeneralSchema = z.object({
   price_ref_mxn: z.coerce.number().int().min(0).max(100000).nullable().optional(),
   active: z.boolean().default(false),
   briefing_voice_path: z.string().nullable().optional(),
+  // Marketing (Fase 2)
+  cover_image_path: z.string().nullable().optional(),
+  atmosphere_image_path: z.string().nullable().optional(),
+  marketing_synopsis: z.string().max(3000).nullable().optional(),
+  difficulty: z.enum(['facil', 'medio', 'dificil']).optional(),
+  players_min: z.coerce.number().int().min(1).max(12).optional(),
+  players_max: z.coerce.number().int().min(1).max(12).optional(),
 });
 export type CaseGeneralInput = z.infer<typeof caseGeneralSchema>;
+
+// Payload del tab Marketing (subconjunto que se guarda vía PATCH)
+export const caseMarketingSchema = z.object({
+  cover_image_path: z.string().nullable().optional(),
+  atmosphere_image_path: z.string().nullable().optional(),
+  marketing_synopsis: z.string().max(3000).nullable().optional(),
+  difficulty: z.enum(['facil', 'medio', 'dificil']),
+  players_min: z.coerce.number().int().min(1).max(12),
+  players_max: z.coerce.number().int().min(1).max(12),
+});
+export type CaseMarketingInput = z.infer<typeof caseMarketingSchema>;
 
 export const suspectSchema = z.object({
   id: z.string().uuid().optional(),
