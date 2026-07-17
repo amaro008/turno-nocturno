@@ -19,6 +19,8 @@ export interface SessionSuspect {
   relation: string | null;
   description: string | null;
   alibi: string | null;
+  physical_description: string | null;
+  distinctive_features: string | null;
   photoUrl: string | null;
 }
 

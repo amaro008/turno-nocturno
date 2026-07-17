@@ -70,3 +70,26 @@ medios. Filas = evidencias, columnas = A/B/C. Cero contradicciones. Se versiona 
 
 ## Precio referencial (informativo en MVP, sin pasarela)
 `cases.price_mxn = 399` (referencia interna del piloto; el admin puede cobrar lo que quiera).
+
+## Dirección de arte y rasgos distintivos (Iteración 3, Fase 3)
+**Dirección de arte:** fotografía documental noir, Monterrey 1989 — grano 35mm, claroscuro
+tungsteno, paleta verde-ámbar desaturada con acento carmín. (Ver
+`content/casos/001-ultima-transmision/GUIA-DE-ARTE.md` para todos los prompts.)
+
+**Roster de sospechosos ampliado a 6** (antes 3). Cada uno tiene un rasgo distintivo que puede
+ser pista y debe verse en su imagen:
+
+| Sospechoso | Ocupación | Rasgo distintivo (pista) |
+|---|---|---|
+| Marcos Treviño | ingeniero | cicatriz en ceja derecha · reloj plateado (visible al cargar el trofeo, var. A) |
+| Elena Vidal | productora | anillo de plata con granate (mano izq.) — visible en VHS-lobby-B al cerrar la puerta |
+| Fernando Ibarra | dueño | anillo de graduación Yale — visible en el acceso del patio, var. C |
+| Silvia Rentería | telefonista | lentes de pasta negra · nictalopía (no maneja de noche → cae su coartada) |
+| Joaquín "El Cuervo" Peña | locatario | tatuaje de cuervo mal hecho · falta dedo anular izq. — su ausencia en los VHS lo exonera (var. C) |
+| Beatriz Campos | recepcionista | collar con dije de foto — caracterización, **no** es pista |
+
+**Víctima Rodrigo Salazar:** tatuaje de búho en el antebrazo izquierdo (alias al aire) —
+caracterización. Prompt en el slot `victim_portrait`.
+
+**Assets visuales (`case_visual_prompts`):** `scene_of_crime`, `victim_portrait`, y los 4 VHS
+(`vhs_pasillo_a`, `vhs_lobby_a`, `vhs_lobby_b`, `vhs_pasillo_b`) — 2 por variante.

@@ -33,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
       getDeliveredCodes(ctx.session.id),
       svc
         .from('suspects')
-        .select('id, name, age, occupation, relation, description, alibi, photo_path')
+        .select('id, name, age, occupation, relation, description, alibi, photo_path, physical_description, distinctive_features')
         .eq('case_id', ctx.caseRow.id)
         .order('sort_order', { ascending: true }),
       svc.from('verdicts').select('*').eq('session_id', ctx.session.id).maybeSingle(),
@@ -72,6 +72,8 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
       relation: s.relation,
       description: s.description,
       alibi: s.alibi,
+      physical_description: s.physical_description,
+      distinctive_features: s.distinctive_features,
       photoUrl: await signedUrl(s.photo_path, SESSION_MEDIA_TTL),
     })),
   );

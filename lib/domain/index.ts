@@ -41,6 +41,11 @@ export interface Case {
   difficulty: CaseDifficulty;
   players_min: number;
   players_max: number;
+  // Dirección de arte (Iteración 3, Fase 3)
+  art_direction: string;
+  cover_image_prompt: string;
+  hero_image_prompt: string;
+  art_autoinject: boolean;
   active: boolean;
   created_at: string;
 }
@@ -80,6 +85,29 @@ export interface Suspect {
   alibi: string | null;
   photo_path: string | null;
   sort_order: number;
+  // Dirección de arte (Iteración 3, Fase 3)
+  physical_description: string;
+  distinctive_features: string;
+  image_prompt: string;
+  created_at: string;
+}
+
+// ---- Prompt visual de un asset del caso (escena, VHS, evidencia) ----
+export type VisualMediaKind = 'image' | 'video';
+export type VisualStatus = 'pending' | 'generated' | 'approved';
+
+export interface CaseVisualPrompt {
+  id: string;
+  case_id: string;
+  variant_id: string | null;
+  slot_name: string;
+  media_kind: VisualMediaKind;
+  prompt: string;
+  negative_prompt: string;
+  technical_params: Record<string, unknown>;
+  reference_notes: string;
+  generated_asset_path: string | null;
+  status: VisualStatus;
   created_at: string;
 }
 

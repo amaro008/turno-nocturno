@@ -57,13 +57,32 @@ CMS ligero de imágenes del landing/marketing, editables desde `/admin/assets`.
 - RLS: **lectura pública** (imágenes de marketing, no sensibles); escritura solo por service role
 - La sección para el filtro admin se **deriva del slot** (no es columna)
 
-### suspects (Fase 1)
+### suspects (Fase 1 · ampliado en it3 F3)
 Sospechosos compartidos por caso; en cada variante uno de ellos es el culpable.
 - `id` uuid pk, `case_id` fk
 - `name`, `age` int, `occupation`, `relation` (con la víctima), `description`, `alibi` (coartada)
 - `photo_path` text — ruta en el bucket `media`
 - `sort_order` int — orden en el expediente
+- **`physical_description` text (it3 F3)** — descripción física neutra
+- **`distinctive_features` text (it3 F3)** — rasgos-pista (deben verse en la imagen y ser
+  detectables por los jugadores en la ficha del sospechoso)
+- **`image_prompt` text (it3 F3)** — prompt de IA listo para pegar (autogenerable, editable)
 - `created_at`
+
+### case_visual_prompts (it3 F3)
+Prompts de assets adicionales del caso (escena del crimen, videos VHS, evidencias visuales).
+- `id` uuid pk, `case_id` fk, `variant_id` fk nullable (si es específico de variante)
+- `slot_name` text (unique por caso) — ej. `scene_of_crime`, `vhs_lobby_b`, `victim_portrait`
+- `media_kind` enum (`image | video`)
+- `prompt`, `negative_prompt` text
+- `technical_params` jsonb — aspecto/duración/estilo (ej. `{"raw":"--ar 16:9 --s 250"}`)
+- `reference_notes` text — notas para consistencia entre assets
+- `generated_asset_path` text nullable — asset ya generado y subido
+- `status` enum (`pending | generated | approved`)
+- RLS: solo service role (material de autoría; no sale al cliente)
+
+> `cases` suma en it3 F3: `art_direction`, `cover_image_prompt`, `hero_image_prompt`,
+> `art_autoinject` (bool).
 
 ### variants
 - `id` uuid pk, `case_id` fk, `code` text (`A|B|C`)

@@ -95,6 +95,23 @@ Supabase Storage vía URL firmada (`POST /api/admin/media/upload-url`) — nunca
 key. Valida MIME y tamaño (imágenes 5 MB, audio 20 MB, video 100 MB). Ruta:
 `casos/{caso_slug}/{categoria}/{filename}` en el bucket privado `media`.
 
+### 3.6 Dirección de Arte por caso — Iteración 3, Fase 3
+Tab **"Dirección de Arte"** dentro de `/admin/casos/[slug]/editar`. Genera prompts de IA
+consistentes para producir los assets del caso *offline* y subir el resultado.
+1. **Estilo general:** textarea `art_direction` + toggle "auto-inyectar" (mete el estilo en el
+   bloque `[STYLE]` de todos los prompts). Botón para descargar `GUIA-DE-ARTE.md`.
+2. **Imágenes principales:** portada y hero, con prompt editable, "Copiar", "Regenerar" y uploader.
+3. **Sospechosos:** por cada uno, descripción física + **rasgos distintivos** (pistas) + prompt;
+   botón **"Generar prompt"** (combina físico + rasgos + dirección de arte), "Copiar" y uploader de foto.
+4. **Assets adicionales (`case_visual_prompts`):** slots de escena/VHS/evidencia con prompt,
+   negative prompt, parámetros técnicos, estado y "Copiar prompt completo"; "+ Agregar slot".
+5. **Checklist:** X de Y assets con imagen generada; avisa si el caso está `active` con faltantes.
+- Motor puro `lib/engine/prompt-builder.ts` (testeable). API: `GET/PATCH art-direction`,
+  `PATCH /api/admin/suspects/[id]/prompt`, `POST /api/admin/cases/[slug]/visual-prompts`,
+  `GET .../art-guide` (descarga el Markdown). Ver `docs/GUIA-DIRECCION-DE-ARTE.md`.
+- **Consola de juego:** la ficha del sospechoso muestra la imagen, `physical_description` y una
+  sección **"Rasgos distintivos"** con ícono de lupa (le indica al jugador que pueden ser pistas).
+
 ### 3.5 Biblioteca de assets del sitio (`/admin/assets`) — Iteración 3, Fase 1
 CMS ligero para cambiar las imágenes del landing y marketing **sin tocar código**.
 - **Grid visual** de todos los "slots" del sitio; filtro por sección (Landing / Cómo funciona /

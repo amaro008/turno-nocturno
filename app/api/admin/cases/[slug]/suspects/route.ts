@@ -31,34 +31,24 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
     const parsed = suspectSchema.safeParse(data);
     if (!parsed.success) return NextResponse.json({ error: 'invalid', issues: parsed.error.flatten() }, { status: 400 });
     const s = parsed.data;
+    const fields = {
+      name: s.name,
+      age: s.age ?? null,
+      occupation: s.occupation ?? null,
+      relation: s.relation ?? null,
+      description: s.description ?? null,
+      alibi: s.alibi ?? null,
+      photo_path: s.photo_path ?? null,
+      physical_description: s.physical_description ?? '',
+      distinctive_features: s.distinctive_features ?? '',
+      image_prompt: s.image_prompt ?? '',
+    };
     if (op === 'create') {
       const { count } = await svc.from('suspects').select('*', { count: 'exact', head: true }).eq('case_id', caseRow.id);
-      await svc.from('suspects').insert({
-        case_id: caseRow.id,
-        name: s.name,
-        age: s.age ?? null,
-        occupation: s.occupation ?? null,
-        relation: s.relation ?? null,
-        description: s.description ?? null,
-        alibi: s.alibi ?? null,
-        photo_path: s.photo_path ?? null,
-        sort_order: count ?? 0,
-      });
+      await svc.from('suspects').insert({ ...fields, case_id: caseRow.id, sort_order: count ?? 0 });
       await logAdminAction(admin.id, 'suspect_create', 'case', caseRow.id, { name: s.name });
     } else if (op === 'update' && s.id) {
-      await svc
-        .from('suspects')
-        .update({
-          name: s.name,
-          age: s.age ?? null,
-          occupation: s.occupation ?? null,
-          relation: s.relation ?? null,
-          description: s.description ?? null,
-          alibi: s.alibi ?? null,
-          photo_path: s.photo_path ?? null,
-        })
-        .eq('id', s.id)
-        .eq('case_id', caseRow.id);
+      await svc.from('suspects').update(fields).eq('id', s.id).eq('case_id', caseRow.id);
     }
   }
 

@@ -78,6 +78,24 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
                 <p>{open.description}</p>
               </div>
             )}
+            {open.physical_description && (
+              <div className="suspect-field">
+                <span className="sf-label">Descripción física</span>
+                <p>{open.physical_description}</p>
+              </div>
+            )}
+            {open.distinctive_features && (
+              <div className="suspect-field rasgos">
+                <span className="sf-label rasgos-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+                  </svg>
+                  Rasgos distintivos
+                </span>
+                <p>{open.distinctive_features}</p>
+                <span className="rasgos-hint">Estos rasgos pueden ser pistas. Revísalos con atención.</span>
+              </div>
+            )}
             {open.alibi && (
               <div className="suspect-field">
                 <span className="sf-label">Coartada declarada</span>

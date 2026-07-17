@@ -51,8 +51,40 @@ export const suspectSchema = z.object({
   alibi: z.string().max(1000).nullable().optional(),
   photo_path: z.string().nullable().optional(),
   sort_order: z.coerce.number().int().default(0),
+  // Dirección de arte (Fase 3)
+  physical_description: z.string().max(2000).nullable().optional(),
+  distinctive_features: z.string().max(2000).nullable().optional(),
+  image_prompt: z.string().max(4000).nullable().optional(),
 });
 export type SuspectInput = z.infer<typeof suspectSchema>;
+
+// ---- Dirección de arte del caso ----
+export const artDirectionSchema = z.object({
+  art_direction: z.string().max(4000).default(''),
+  cover_image_prompt: z.string().max(4000).default(''),
+  hero_image_prompt: z.string().max(4000).default(''),
+  art_autoinject: z.boolean().default(true),
+});
+export type ArtDirectionInput = z.infer<typeof artDirectionSchema>;
+
+// ---- Prompt visual (asset adicional) ----
+export const visualPromptSchema = z.object({
+  id: z.string().uuid().optional(),
+  variant_id: z.string().uuid().nullable().optional(),
+  slot_name: z
+    .string()
+    .min(2)
+    .max(60)
+    .regex(/^[a-z0-9_-]+$/, 'Minúsculas, números, guiones y guion bajo'),
+  media_kind: z.enum(['image', 'video']),
+  prompt: z.string().max(6000).default(''),
+  negative_prompt: z.string().max(2000).default(''),
+  technical_params: z.record(z.any()).default({}),
+  reference_notes: z.string().max(2000).default(''),
+  generated_asset_path: z.string().nullable().optional(),
+  status: z.enum(['pending', 'generated', 'approved']).default('pending'),
+});
+export type VisualPromptInput = z.infer<typeof visualPromptSchema>;
 
 export const evidenceKind = z.enum(['audio', 'video', 'document', 'hint']);
 export const evidenceScope = z.enum(['shared', 'variant']);

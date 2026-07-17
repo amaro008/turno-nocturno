@@ -9,8 +9,9 @@ import VariantsTab from './VariantsTab';
 import TimelineTab from './TimelineTab';
 import MatrixTab from './MatrixTab';
 import MarketingTab from './MarketingTab';
+import ArtDirectionTab from './ArtDirectionTab';
 
-type TabId = 'general' | 'marketing' | 'sospechosos' | 'evidencias' | 'variantes' | 'timeline' | 'matriz';
+type TabId = 'general' | 'marketing' | 'arte' | 'sospechosos' | 'evidencias' | 'variantes' | 'timeline' | 'matriz';
 
 export default function CaseEditor({
   caseRow,
@@ -48,6 +49,7 @@ export default function CaseEditor({
   const tabs: { id: TabId; label: string; n?: number; warn?: boolean }[] = [
     { id: 'general', label: 'General' },
     { id: 'marketing', label: 'Marketing' },
+    { id: 'arte', label: 'Dirección de Arte' },
     { id: 'sospechosos', label: 'Sospechosos', n: suspects.length },
     { id: 'evidencias', label: 'Evidencias', n: evidence.length },
     { id: 'variantes', label: 'Variantes', n: variants.length },
@@ -75,6 +77,7 @@ export default function CaseEditor({
 
       {tab === 'general' && <CaseGeneralForm mode="edit" initial={caseRow} />}
       {tab === 'marketing' && <MarketingTab caseRow={caseRow} />}
+      {tab === 'arte' && <ArtDirectionTab slug={caseRow.slug} />}
       {tab === 'sospechosos' && (
         <SuspectsTab slug={caseRow.slug} suspects={suspects} setSuspects={setSuspects} />
       )}

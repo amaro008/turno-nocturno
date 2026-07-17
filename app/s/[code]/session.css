@@ -83,6 +83,9 @@
 .suspect-field { margin-bottom: 14px; }
 .sf-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--amber); }
 .suspect-field p { margin: 5px 0 0; color: var(--ink); font-size: 14px; line-height: 1.55; }
+.suspect-field.rasgos { border: 1px solid var(--amber-deep); border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--amber) 7%, transparent); }
+.rasgos-label { display: inline-flex; align-items: center; gap: 6px; color: var(--amber) !important; }
+.rasgos-hint { display: block; margin-top: 8px; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
 
 /* ===== Documentos ===== */
 .doc-list { display: flex; flex-direction: column; gap: 8px; }
