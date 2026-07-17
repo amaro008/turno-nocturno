@@ -33,7 +33,39 @@ export interface Case {
   era_profile: string;
   time_limit_min: number;
   briefing_voice_path: string | null;
+  price_ref_mxn: number | null;
+  validation_matrix: ValidationMatrix;
   active: boolean;
+  created_at: string;
+}
+
+/** Matriz de validación documental: evidenceCode → variantCode → celda */
+export type ValidationMatrix = Record<
+  string,
+  Record<string, { consistent: boolean; note: string }>
+>;
+
+/** Perfiles de época disponibles (estética + post-fx). */
+export const ERA_PROFILES = [
+  { value: 'vhs-80s', label: 'VHS · años 80' },
+  { value: 'cassette-90s', label: 'Cassette · años 90' },
+  { value: 'cctv-2000s', label: 'CCTV · años 2000' },
+  { value: 'smartphone-2010s', label: 'Smartphone · años 2010' },
+  { value: 'default', label: 'Sin perfil' },
+] as const;
+
+// ---- Sospechoso ----
+export interface Suspect {
+  id: string;
+  case_id: string;
+  name: string;
+  age: number | null;
+  occupation: string | null;
+  relation: string | null;
+  description: string | null;
+  alibi: string | null;
+  photo_path: string | null;
+  sort_order: number;
   created_at: string;
 }
 
@@ -44,6 +76,7 @@ export interface Variant {
   code: string; // 'A' | 'B' | 'C'
   active: boolean;
   culprit: string;
+  culprit_suspect_id: string | null;
   solution_narrative: string;
   solution_voice_path: string | null;
   commander_context: string;

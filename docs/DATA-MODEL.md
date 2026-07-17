@@ -38,16 +38,27 @@ sessions 1—1 verdicts
 
 ### cases
 - `id` uuid pk, `slug` text unique, `title`, `synopsis`
-- `city` text, `era_year` int, `era_profile` text (`vhs-80s`, ...)
+- `city` text, `era_year` int, `era_profile` text (`vhs-80s`, `cassette-90s`, `cctv-2000s`, `smartphone-2010s`, ...)
 - `time_limit_min` int DEFAULT 150
 - `briefing_voice_path` text
 - `active` bool DEFAULT true — permite ocultar del catálogo público sin borrar
-- `price_mxn` int nullable — informativo en MVP (no hay pasarela); base para V1
+- `price_ref_mxn` int nullable — precio de referencia (Fase 1; sin pasarela en MVP)
+- `validation_matrix` jsonb DEFAULT `{}` — matriz documental (Fase 1):
+  `{ [evidenceCode]: { [variantCode]: { consistent: bool, note: text } } }`
+
+### suspects (Fase 1)
+Sospechosos compartidos por caso; en cada variante uno de ellos es el culpable.
+- `id` uuid pk, `case_id` fk
+- `name`, `age` int, `occupation`, `relation` (con la víctima), `description`, `alibi` (coartada)
+- `photo_path` text — ruta en el bucket `media`
+- `sort_order` int — orden en el expediente
+- `created_at`
 
 ### variants
 - `id` uuid pk, `case_id` fk, `code` text (`A|B|C`)
 - `active` bool DEFAULT true — solo participan en el sorteo si active
-- `culprit` text — **jamás en prompts del chat**
+- `culprit` text — **jamás en prompts del chat** (denormalizado del sospechoso)
+- `culprit_suspect_id` uuid fk → `suspects` (Fase 1) — fuente de verdad del culpable
 - `solution_narrative`, `solution_voice_path`
 - `commander_context` text
 - `rubric` jsonb
@@ -146,7 +157,10 @@ Habilitada en todas las tablas de usuario. Políticas base:
 - `evidence_items`: lectura solo desde API server-side (nunca directo desde cliente)
 - `admin_actions`: solo admin escribe/lee
 
-## Migrations (`supabase/migrations/`)
-Orden: `0001_auth_and_profiles → 0002_cases_variants_evidence → 0003_case_timeline →
-0004_access_codes → 0005_sessions_and_events → 0006_chat_messages → 0007_verdicts →
-0008_admin_actions_audit`
+## Migrations (`supabase/migrations/`) — estado real del repo
+Orden aplicado:
+- `0001_initial_schema` — profiles, cases, variants, evidence_items, access_codes, sessions, verdicts
+- `0002_timeline_chat_events` — case_timeline, chat_messages, session_events, admin_actions, data_deletion_requests
+- `0003_auth_trigger_rls` — trigger `handle_new_user`, `is_admin()`, políticas RLS
+- `0004_suspects_and_case_admin` (**Fase 1**) — tabla `suspects`, `variants.culprit_suspect_id`,
+  `cases.price_ref_mxn`, `cases.validation_matrix`, bucket de Storage `media`

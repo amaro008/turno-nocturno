@@ -90,9 +90,24 @@ turno-nocturno/
 │   │   ├── usuarios/
 │   │   │   ├── page.tsx            # Listado
 │   │   │   └── [id]/page.tsx       # Detalle
-│   │   ├── casos/
-│   │   │   ├── page.tsx
-│   │   │   └── [slug]/page.tsx
+│   │   ├── casos/                # Gestión de casos (Fase 1 — IMPLEMENTADO)
+│   │   │   ├── casos.css         # Estilos del módulo (tabs, uploader, entidades, matriz)
+│   │   │   ├── layout.tsx        # Carga casos.css
+│   │   │   ├── actions.ts        # toggleCaseActive (server action + auditoría)
+│   │   │   ├── page.tsx          # Listado mejorado + acciones por fila
+│   │   │   ├── nuevo/page.tsx    # Alta (tab General) → redirige a editar
+│   │   │   ├── [slug]/editar/page.tsx        # Carga caso + sub-entidades → CaseEditor
+│   │   │   ├── [slug]/estadisticas/page.tsx  # Métricas del caso
+│   │   │   └── _components/
+│   │   │       ├── CaseEditor.tsx            # Contenedor de los 6 tabs
+│   │   │       ├── CaseGeneralForm.tsx       # Tab General (react-hook-form + Zod)
+│   │   │       ├── SuspectsTab.tsx           # Sospechosos (reordenables)
+│   │   │       ├── EvidenceTab.tsx           # Evidencias (filtros, prereqs, preview)
+│   │   │       ├── VariantsTab.tsx           # Variantes (culpable validado + rúbrica)
+│   │   │       ├── TimelineTab.tsx           # Timeline + preview de línea de tiempo
+│   │   │       ├── MatrixTab.tsx             # Matriz de validación documental
+│   │   │       ├── MediaUploader.tsx         # Uploader drag-and-drop → Storage firmado
+│   │   │       └── entityApi.ts              # Helper de cliente para CRUD de sub-entidades
 │   │   ├── codigos/
 │   │   │   ├── page.tsx            # Listado con filtros
 │   │   │   ├── nuevo/page.tsx      # Crear código + enviar
@@ -127,17 +142,15 @@ turno-nocturno/
 │       │   └── [code]/url/route.ts
 │       ├── verdict/
 │       │   └── submit/route.ts
-│       └── admin/                          # TODAS con assertAdmin
-│           ├── metrics/route.ts
-│           ├── users/route.ts
-│           ├── users/[id]/route.ts
-│           ├── cases/route.ts
-│           ├── cases/[slug]/route.ts
-│           ├── codes/route.ts              # GET listar, POST crear
-│           ├── codes/[id]/route.ts         # GET, PATCH (revocar), DELETE
-│           ├── codes/[id]/send/route.ts    # POST: enviar/reenviar email
-│           ├── sessions/route.ts
-│           └── sessions/[id]/route.ts
+│       └── admin/                          # TODAS con assertAdminApi + auditoría
+│           ├── cases/route.ts              # POST crear caso (Fase 1)
+│           ├── cases/[slug]/route.ts       # PATCH editar caso + matriz (Fase 1)
+│           ├── cases/[slug]/suspects/route.ts    # POST { op } CRUD sospechosos (Fase 1)
+│           ├── cases/[slug]/evidence/route.ts    # POST { op } CRUD evidencias (Fase 1)
+│           ├── cases/[slug]/variants/route.ts    # POST { op } CRUD variantes (Fase 1)
+│           ├── cases/[slug]/timeline/route.ts    # POST { op } CRUD timeline (Fase 1)
+│           └── media/upload-url/route.ts   # POST URL firmada de subida (Fase 1)
+│           # Códigos siguen como server actions en app/admin/actions.ts
 │
 ├── lib/                            # Lógica compartida
 │   ├── server/                     # SOLO servidor

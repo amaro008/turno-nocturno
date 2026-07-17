@@ -56,17 +56,44 @@ Vista de aterrizaje. Tarjetas de métricas + tabla de últimas 10 sesiones.
 - Acciones: marcar como VIP (bandera para códigos gratis futuros), bloquear cuenta,
   resetear password (envío de email)
 
-### 3. Gestión de casos (`/admin/casos`)
-**Listado:**
-- Columnas: título, ciudad, época, variantes activas, sesiones jugadas, % acierto promedio
-- Toggle rápido `active` (para casos en borrador)
+### 3. Gestión de casos (`/admin/casos`) — Fase 1 (IMPLEMENTADO)
+Editor visual completo de casos **sin YAML ni terminal**. Reemplaza el flujo de
+autoría por archivos para la creación y edición de casos desde el navegador.
 
-**Detalle (`/admin/casos/[slug]`):**
-- Metadatos del caso
-- Lista de variantes con toggle `active` (habilita/deshabilita el sorteo)
-- Preview del timeline (case_timeline)
-- Preview de evidencias por variante
-- Estadísticas: veces jugada cada variante, tasa de acierto por variante, pistas usadas promedio
+**Listado (`/admin/casos`):**
+- Tabla: título, ciudad, época (`era_year · era_profile`), estado (borrador/activo),
+  variantes activas, sesiones jugadas
+- Botón "+ Nuevo caso" arriba a la derecha
+- Acciones por fila: **Editar**, **Estadísticas**, **Activar/Desactivar** (server action con auditoría)
+
+**Alta (`/admin/casos/nuevo`):** formulario General (react-hook-form + Zod). Al crear,
+redirige al editor multi-tab.
+
+**Editor (`/admin/casos/[slug]/editar`):** seis tabs. Cada sub-entidad persiste por su
+propia API (`POST .../{entidad}` con `{ op, data }`) y refresca la lista al vuelo:
+- **General:** título, slug (auto del título, editable), sinopsis, ciudad, año,
+  `era_profile` (select vhs-80s / cassette-90s / cctv-2000s / smartphone-2010s / default),
+  duración, precio de referencia MXN, toggle `active`, y **uploader de voz de briefing**.
+- **Sospechosos:** lista editable (nombre, edad, ocupación, relación, descripción, coartada,
+  foto). Reordenable (▲▼). Compartidos entre variantes.
+- **Evidencias:** código, título, tipo, scope (compartida/variante), minuto entregable,
+  forma de entrega, prerequisitos (multi-select), uploader por tipo (doc→imagen opcional,
+  audio→mp3, video→mp4), preview inline. Filtros por scope y tipo.
+- **Variantes (máx 3):** código A/B/C, culpable (**select de sospechosos, validado en servidor**),
+  toggle activo, narrativa + audio de resolución, contexto del Comandante (sin revelar culpable),
+  rúbrica (cómo/por qué + palabras clave).
+- **Timeline del Comandante:** eventos por minuto (mensaje/voz/evidencia/presión/deadline) con
+  payload según tipo y scope de variante. **Preview visual** tipo línea de tiempo.
+- **Matriz de validación:** tabla auto-generada (evidencias × variantes) con checkbox
+  "consistente" + nota por celda. Documental: avisa si hay evidencias sin validar, no bloquea.
+
+**Estadísticas (`/admin/casos/[slug]/estadisticas`):** sesiones jugadas, aciertos de culpable,
+puntaje promedio y veces sorteada por variante.
+
+**Uploads:** `<MediaUploader />` con drag-and-drop, preview y barra de progreso. Sube directo a
+Supabase Storage vía URL firmada (`POST /api/admin/media/upload-url`) — nunca expone la service
+key. Valida MIME y tamaño (imágenes 5 MB, audio 20 MB, video 100 MB). Ruta:
+`casos/{caso_slug}/{categoria}/{filename}` en el bucket privado `media`.
 
 ### 4. Gestión de códigos (`/admin/codigos`) — El módulo central del piloto
 **Listado:**
