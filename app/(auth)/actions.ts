@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/server/supabase';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 function fail(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
