@@ -22,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="admin-tag">Panel de operación</div>
         <Link className="admin-link" href="/admin">Dashboard</Link>
         <Link className="admin-link" href="/admin/casos">Casos</Link>
+        <Link className="admin-link" href="/admin/assets">Assets del sitio</Link>
         <Link className="admin-link" href="/admin/codigos">Códigos</Link>
         <Link className="admin-link" href="/admin/codigos/nuevo">Crear código</Link>
         <Link className="admin-link" href="/mi-biblioteca">← Volver a la app</Link>

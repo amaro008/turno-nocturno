@@ -303,7 +303,8 @@
 .testi { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 .testi p { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.6; font-style: italic; }
 .testi .t-who { display: flex; align-items: center; gap: 12px; }
-.testi .t-av { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--amber) 24%, var(--panel-3)), var(--panel-3)); border: 1px solid var(--amber-deep); display: grid; place-items: center; font-family: var(--font-mono); color: var(--amber-2); font-weight: 700; font-size: 14px; }
+.testi .t-av { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 1px solid var(--amber-deep); position: relative; flex: none; }
+.testi .t-av .gph-label { font-size: 13px; color: var(--amber-2); font-weight: 700; font-family: var(--font-mono); }
 .testi .t-name { font-weight: 700; font-size: 14px; }
 .testi .t-role { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
 .testi .t-stars { color: var(--amber); letter-spacing: 2px; font-size: 13px; }
@@ -321,7 +322,8 @@
 .prose-block { max-width: 720px; margin: 0 auto; }
 .prose-block h2 { font-size: 24px; margin: 40px 0 12px; letter-spacing: -0.01em; }
 .prose-block p { color: var(--ink-2); font-size: 16px; line-height: 1.7; margin: 0 0 14px; }
-.prose-img { width: 100%; border-radius: 16px; border: 1px solid var(--line); margin: 20px 0; height: 300px; object-fit: cover; filter: grayscale(0.3); }
+.prose-img { position: relative; width: 100%; border-radius: 16px; border: 1px solid var(--line); margin: 20px 0; height: 300px; overflow: hidden; }
+.prose-img img { filter: grayscale(0.3); }
 
 .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 

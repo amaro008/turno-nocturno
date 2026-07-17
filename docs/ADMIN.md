@@ -95,6 +95,23 @@ Supabase Storage vía URL firmada (`POST /api/admin/media/upload-url`) — nunca
 key. Valida MIME y tamaño (imágenes 5 MB, audio 20 MB, video 100 MB). Ruta:
 `casos/{caso_slug}/{categoria}/{filename}` en el bucket privado `media`.
 
+### 3.5 Biblioteca de assets del sitio (`/admin/assets`) — Iteración 3, Fase 1
+CMS ligero para cambiar las imágenes del landing y marketing **sin tocar código**.
+- **Grid visual** de todos los "slots" del sitio; filtro por sección (Landing / Cómo funciona /
+  Testimonios / Catálogo…). Cada tarjeta: preview actual, nombre, slot, dónde se usa, y botones
+  **Cambiar imagen** y **Editar alt**.
+- **Cambiar imagen:** modal con uploader drag-and-drop y **preview antes/después**. Al guardar,
+  sube a Storage y actualiza el `image_path`. Versionado implícito: nunca se sobrescribe el
+  archivo, se apunta al nuevo `site-assets/{slot}/{timestamp}-{filename}`.
+- **Componente `<SiteAsset slot="landing.hero" />`:** resuelve el slot contra la BD (cache de RSC),
+  renderiza `next/image` con URL firmada y cae a un **placeholder gradiente elegante** si no hay
+  imagen. Reemplaza las imágenes hardcodeadas del landing (hero, 3 pasos, avatares de testimonios,
+  hero de "cómo funciona").
+- **Slots sembrados (0007):** `landing.hero`, `landing.how_step_1..3`,
+  `landing.testimonial_1..3_avatar`, `como_funciona.hero`, `catalog.empty_state`.
+- **API:** `GET /api/admin/assets`, `PATCH /api/admin/assets/[slot]`,
+  `POST /api/admin/assets/upload-url` — todas con `assertAdminApi` + auditoría en `admin_actions`.
+
 ### 4. Gestión de códigos (`/admin/codigos`) — El módulo central del piloto
 **Listado:**
 - Filtros por estado (`draft | sent | redeemed | activated | completed | expired`)

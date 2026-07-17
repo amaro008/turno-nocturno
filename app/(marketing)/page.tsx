@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import SiteNav from './_components/SiteNav';
 import SiteFooter from './_components/SiteFooter';
-import AtmoImage from '@/components/AtmoImage';
+import SiteAsset from '@/components/SiteAsset';
 import { InitialsCover } from '@/components/Initials';
 import { getActiveCases } from '@/lib/server/public-cases';
-import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
 
 function caseNumber(slug: string) {
@@ -32,31 +31,29 @@ export const metadata = {
 };
 
 const STEPS = [
-  { n: '01', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas listo.', q: 'sign up,desk,vintage', seed: 'tn-step1' },
-  { n: '02', title: 'Recibe tu código', text: 'Te llega por correo un código de acceso para el caso que elegiste.', q: 'letter,envelope,noir', seed: 'tn-step2' },
-  { n: '03', title: 'Juega en grupo', text: 'De 2 a 6 detectives frente a una pantalla. El reloj arranca.', q: 'friends,night,detective', seed: 'tn-step3' },
+  { n: '01', slot: 'landing.how_step_1', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas listo.' },
+  { n: '02', slot: 'landing.how_step_2', title: 'Recibe tu código', text: 'Te llega por correo un código de acceso para el caso que elegiste.' },
+  { n: '03', slot: 'landing.how_step_3', title: 'Juega en grupo', text: 'De 2 a 6 detectives frente a una pantalla. El reloj arranca.' },
 ];
 
 const TESTIMONIALS = [
-  { quote: 'Terminamos gritándole al Comandante como si fuera real. Dos horas que se sintieron veinte minutos.', name: 'Mariana G.', role: 'Mesa de 4 · CDMX', initials: 'MG' },
-  { quote: 'La evidencia de época está increíble. Sentías que estabas en el 89 de verdad.', name: 'Diego R.', role: 'Mesa de 5 · Monterrey', initials: 'DR' },
-  { quote: 'Lo volvimos a jugar y el culpable era otro. No lo podíamos creer.', name: 'Sofía L.', role: 'Mesa de 3 · Guadalajara', initials: 'SL' },
+  { quote: 'Terminamos gritándole al Comandante como si fuera real. Dos horas que se sintieron veinte minutos.', name: 'Mariana G.', role: 'Mesa de 4 · CDMX', initials: 'MG', slot: 'landing.testimonial_1_avatar' },
+  { quote: 'La evidencia de época está increíble. Sentías que estabas en el 89 de verdad.', name: 'Diego R.', role: 'Mesa de 5 · Monterrey', initials: 'DR', slot: 'landing.testimonial_2_avatar' },
+  { quote: 'Lo volvimos a jugar y el culpable era otro. No lo podíamos creer.', name: 'Sofía L.', role: 'Mesa de 3 · Guadalajara', initials: 'SL', slot: 'landing.testimonial_3_avatar' },
 ];
 
 export default async function HomePage() {
   const cases = await getActiveCases();
-  const featured = cases[0];
-
-  const atmoPrimary = featured?.atmosphereUrl ?? unsplashUrl('detective noir dark city night', 1800, 1000);
-  const atmoFallback = picsumUrl('turno-nocturno-hero', 1800, 1000, true);
 
   return (
     <>
       <SiteNav />
 
-      {/* HERO con imagen atmosférica */}
+      {/* HERO con imagen atmosférica (editable desde /admin/assets) */}
       <section className="hero-img">
-        <AtmoImage primary={atmoPrimary} fallback={atmoFallback} alt="Escena nocturna de investigación" className="hero-img-bg" />
+        <div className="hero-img-bg">
+          <SiteAsset slot="landing.hero" priority sizes="100vw" />
+        </div>
         <div className="hero-img-scrim" />
         <div className="hero-img-scan" />
         <div className="wrap hero-img-inner">
@@ -93,7 +90,7 @@ export default async function HomePage() {
             {STEPS.map((s) => (
               <div className="step-illus" key={s.n}>
                 <div className="si-img">
-                  <AtmoImage primary={unsplashUrl(s.q, 600, 360)} fallback={picsumUrl(s.seed, 600, 360, true)} alt={s.title} />
+                  <SiteAsset slot={s.slot} sizes="(max-width: 940px) 100vw, 33vw" />
                   <span className="si-num">{s.n}</span>
                 </div>
                 <div className="si-body">
@@ -164,7 +161,7 @@ export default async function HomePage() {
                 <div className="t-stars">★★★★★</div>
                 <p>“{t.quote}”</p>
                 <div className="t-who">
-                  <span className="t-av">{t.initials}</span>
+                  <span className="t-av"><SiteAsset slot={t.slot} fallbackLabel={t.initials} sizes="40px" /></span>
                   <div>
                     <div className="t-name">{t.name}</div>
                     <div className="t-role">{t.role}</div>

@@ -2,8 +2,7 @@ import Link from 'next/link';
 import SiteNav from '../_components/SiteNav';
 import SiteFooter from '../_components/SiteFooter';
 import HeroTeaser from '../_components/HeroTeaser';
-import AtmoImage from '@/components/AtmoImage';
-import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
+import SiteAsset from '@/components/SiteAsset';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Cómo funciona · Turno Nocturno' };
@@ -34,12 +33,9 @@ export default function ComoFuncionaPage() {
             culpable, explicar cómo lo hizo y por qué.
           </p>
 
-          <AtmoImage
-            primary={unsplashUrl('detective board evidence noir', 1200, 500)}
-            fallback={picsumUrl('como-1', 1200, 500, true)}
-            alt="Tablero de investigación"
-            className="prose-img"
-          />
+          <div className="prose-img">
+            <SiteAsset slot="como_funciona.hero" sizes="(max-width: 720px) 100vw, 720px" />
+          </div>
 
           <h2>1. El Comandante te contacta</h2>
           <p>

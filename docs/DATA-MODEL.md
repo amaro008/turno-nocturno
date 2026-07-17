@@ -46,6 +46,17 @@ sessions 1—1 verdicts
 - `validation_matrix` jsonb DEFAULT `{}` — matriz documental (Fase 1):
   `{ [evidenceCode]: { [variantCode]: { consistent: bool, note: text } } }`
 
+### site_assets (Iteración 3, Fase 1)
+CMS ligero de imágenes del landing/marketing, editables desde `/admin/assets`.
+- `id` uuid pk, `slot` text **unique** — identificador semántico (`landing.hero`,
+  `landing.how_step_1`, `landing.testimonial_1_avatar`, `como_funciona.hero`, `catalog.empty_state`…)
+- `title` text — nombre humano; `description` text — dónde se usa exactamente
+- `image_path` text (nullable) — ruta en el bucket `media` (`site-assets/{slot}/{timestamp}-{file}`)
+- `alt_text` text — accesibilidad/SEO
+- `updated_by_admin` uuid fk → profiles; `updated_at` timestamptz
+- RLS: **lectura pública** (imágenes de marketing, no sensibles); escritura solo por service role
+- La sección para el filtro admin se **deriva del slot** (no es columna)
+
 ### suspects (Fase 1)
 Sospechosos compartidos por caso; en cada variante uno de ellos es el culpable.
 - `id` uuid pk, `case_id` fk
