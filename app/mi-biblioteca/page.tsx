@@ -127,8 +127,8 @@ export default async function BibliotecaPage({
                       </form>
                     )}
                     {status === 'redeemed' && (
-                      <Link className="btn primary block" href={`/s/${c.code}/briefing`}>
-                        Activar sesión
+                      <Link className="btn primary block" href={`/s/${c.code}/mision`}>
+                        Preparar sesión
                       </Link>
                     )}
                     {(status === 'activated' || status === 'in_progress') && (

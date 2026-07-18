@@ -1,6 +1,6 @@
 import { cn } from '@/lib/ui/cn';
 
-export type StampVariant = 'CONFIDENCIAL' | 'CLASIFICADO' | 'ARCHIVO MUERTO' | 'EVIDENCIA' | 'TOP SECRET';
+export type StampVariant = 'CONFIDENCIAL' | 'CLASIFICADO' | 'ARCHIVO MUERTO' | 'EVIDENCIA' | 'TOP SECRET' | 'MISIÓN';
 
 /** Sello de tinta rojo con rotación variable y textura gastada. Decorativo. */
 export default function ConfidentialStamp({

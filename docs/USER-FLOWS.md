@@ -51,29 +51,38 @@ Páginas públicas sin autenticación, con identidad visual e imágenes.
    - `sent_at + 24h > now()` (ventana de canje viva)
    - `created_at + 5d > now()` (vida total viva)
 4. Si válido: status → `redeemed`, `redeemed_at = now()`
-5. Redirige a biblioteca; tarjeta del caso aparece con "Activar sesión" y countdown de vida útil
+5. Redirige a biblioteca; tarjeta del caso aparece con "Preparar sesión" y countdown de vida útil
 6. Si inválido: mensaje claro (código incorrecto / expirado / no es tuyo)
 
-## Flujo 3 — Briefing y arranque del turno (Fase 3)
-El reloj ya **no** arranca al salir de la biblioteca. Hay un paso de preparación.
-1. En biblioteca, click "Activar sesión" → redirige a **`/s/[code]/briefing`**.
+## Flujo 3 — Hoja de misión y arranque del turno (Refactor F3)
+El reloj **no** arranca al salir de la biblioteca. Hay un paso de preparación con una hoja de
+misión clara (reemplaza al briefing anterior; `/s/[code]/briefing` redirige a `/s/[code]/mision`).
+1. En biblioteca, click **"Preparar sesión"** → redirige a **`/s/[code]/mision`**.
    > Aquí NO se crea la sesión ni se sortea variante ni corre el reloj.
-2. La pantalla de briefing muestra (todo desde el servidor, sin exponer la solución):
-   - Título del caso, ciudad + época en grande, con imagen atmosférica de fondo
-   - Sinopsis técnica (con gancho, distinta de la de catálogo)
-   - Grid de sospechosos con foto, nombre y una línea (SIN coartadas ni motivos)
-   - Cómo se gana: duración, 3 pistas, 1 veredicto
-   - Recomendaciones: pantalla compartida, volumen, alguien tomando notas
-3. Botón grande **"INICIAR TURNO NOCTURNO"** → confirmación ("una vez que inicies, el
-   reloj no se detiene"). Botón secundario "Regresar a mi biblioteca" (sin arrancar nada).
+2. La **hoja de misión** muestra, en estética de expediente noir (todo desde el servidor, sin
+   exponer la solución), en secciones verticales con scroll natural:
+   - **Encabezado**: título, ciudad + época, imagen atmosférica, sello rojo "MISIÓN".
+   - **La situación**: sinopsis técnica (el gancho), sin spoilers.
+   - **Su misión**: los 3 objetivos (QUIÉN / CÓMO / POR QUÉ) — "los tres cierran el caso".
+   - **Lo que van a tener**: N sospechosos + conteo de evidencia INICIAL por tipo (documentos,
+     fotos, audios, videos, testimonios, registros) + cuaderno de notas + Comandante para dudas.
+   - **Cómo trabajar el caso** (bloque destacado): material base abierto desde el inicio; el
+     Comandante NO entrega evidencia bajo demanda (solo dudas); contacto cada 20–30 min; 3 pistas
+     (restan puntaje); "Cerrar el caso" cuando estén listos.
+   - **El reloj**: duración total; a cero, veredicto inmediato, sin pausa.
+   - **Recomendaciones**: pantalla compartida, todos presentes, alguien tomando notas, ambiente.
+3. Botón grande **"Iniciar Turno Nocturno"** (rojo confidencial) → **modal de confirmación** con
+   último aviso ("una vez que inicien, el reloj no se detiene… ¿están todos listos?") + "Sí,
+   iniciar". Botón secundario "Regresar a mi biblioteca" (sin arrancar nada).
 4. Al confirmar → `POST /api/sessions/activate { code, confirm:true }`:
    - `access_codes.status` `redeemed → activated`, `activated_at = now()`
    - **Sorteo de variante** entre `variants WHERE case_id = X AND active`
    - Crea `sessions` con `activated_at = now()`, `expires_at = activated_at + 24h`
 5. Redirige a `/s/[code]` (el portal de juego). El reloj corre desde `activated_at`.
 
-> Idempotente: si el código ya está `activated`/`in_progress`, tanto el briefing como
-> la API mandan directo al portal de juego sin recrear nada.
+> Idempotente: si el código ya está `activated`/`in_progress`, tanto la hoja de misión como
+> la API mandan directo al portal de juego sin recrear nada. La víctima (`is_victim`) no aparece
+> en el conteo de sospechosos.
 
 ## Flujo 4 — Sesión de juego · consola de detective (Fase 4)
 La consola es una **mesa de detective**, no solo un chat. Layout de 3 zonas:
