@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
     // Validar que el culpable existe en este caso
     const { data: suspect } = await svc
       .from('suspects')
-      .select('id, name')
+      .select('id, full_name')
       .eq('id', v.culprit_suspect_id)
       .eq('case_id', caseRow.id)
       .maybeSingle();
@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
       case_id: caseRow.id,
       code: v.code,
       active: v.active,
-      culprit: suspect.name,
+      culprit: suspect.full_name,
       culprit_suspect_id: suspect.id,
       solution_narrative: v.solution_narrative,
       solution_voice_path: v.solution_voice_path ?? null,
