@@ -4,7 +4,7 @@ import { assertAdminApi } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
 import { getCaseBySlug } from '@/lib/server/admin-cases';
 import { buildArtGuideMarkdown } from '@/lib/server/art-guide';
-import type { Case, Suspect, CaseVisualPrompt, Variant } from '@/lib/domain';
+import type { Case, SuspectFull, CaseVisualPrompt, Variant } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
 
   const md = buildArtGuideMarkdown(
     caseRow as Case,
-    (suspects ?? []) as Suspect[],
+    (suspects ?? []) as SuspectFull[],
     (visual ?? []) as CaseVisualPrompt[],
     (variants ?? []) as Variant[],
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Variant, Suspect } from '@/lib/domain';
+import type { Variant, SuspectFull } from '@/lib/domain';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
@@ -32,7 +32,7 @@ export default function VariantsTab({
   slug: string;
   variants: Variant[];
   setVariants: (v: Variant[]) => void;
-  suspects: Suspect[];
+  suspects: SuspectFull[];
 }) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +111,7 @@ function VariantCard({
 }: {
   slug: string;
   variant: Draft;
-  suspects: Suspect[];
+  suspects: SuspectFull[];
   isNew?: boolean;
   onSave: (data: Draft) => Promise<boolean>;
   onDelete?: () => void;
@@ -123,7 +123,7 @@ function VariantCard({
   const set = (k: keyof Draft, v: unknown) => setF((p) => ({ ...p, [k]: v }));
   const setRubric = (k: string, v: unknown) => setF((p) => ({ ...p, rubric: { ...p.rubric, [k]: v } }));
 
-  const culpritName = suspects.find((s) => s.id === f.culprit_suspect_id)?.name;
+  const culpritName = suspects.find((s) => s.id === f.culprit_suspect_id)?.full_name;
 
   return (
     <div className="entity">
@@ -142,7 +142,7 @@ function VariantCard({
               <select className="input" value={f.culprit_suspect_id ?? ''} onChange={(e) => set('culprit_suspect_id', e.target.value || null)}>
                 <option value="">Selecciona sospechoso…</option>
                 {suspects.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>{s.full_name}</option>
                 ))}
               </select>
             </div>

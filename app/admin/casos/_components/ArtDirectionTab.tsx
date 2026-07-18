@@ -19,7 +19,7 @@ const CASE_SPEC_SLOTS = [
 
 interface ArtSuspect {
   id: string;
-  name: string;
+  full_name: string;
   age: number | null;
   occupation: string | null;
   physical_description: string;
@@ -90,7 +90,7 @@ export default function ArtDirectionTab({ slug }: { slug: string }) {
   const items: { label: string; done: boolean }[] = [
     { label: 'Portada del caso', done: !!data.case.cover_image_path },
     { label: 'Imagen hero', done: !!data.case.atmosphere_image_path },
-    ...data.suspects.map((s) => ({ label: `Foto — ${s.name}`, done: !!s.photo_path })),
+    ...data.suspects.map((s) => ({ label: `Foto — ${s.full_name}`, done: !!s.photo_path })),
     ...data.visualPrompts.map((v) => ({ label: `Asset — ${v.slot_name}`, done: !!v.generated_asset_path })),
   ];
   const done = items.filter((i) => i.done).length;
@@ -321,7 +321,7 @@ function SuspectArt({
   function generate() {
     setPrompt(
       buildSuspectPrompt(
-        { name: suspect.name, age: suspect.age, occupation: suspect.occupation, physical_description: phys, distinctive_features: feat },
+        { name: suspect.full_name, age: suspect.age, occupation: suspect.occupation, physical_description: phys, distinctive_features: feat },
         artDirection,
         inject,
         getSpec('suspect.portrait'),
@@ -343,10 +343,10 @@ function SuspectArt({
     <div className="art-suspect">
       <div className="art-suspect-top">
         <div className="art-suspect-photo">
-          {suspect.photoUrl ? <img src={suspect.photoUrl} alt={suspect.name} /> : <span className="mono">sin foto</span>}
+          {suspect.photoUrl ? <img src={suspect.photoUrl} alt={suspect.full_name} /> : <span className="mono">sin foto</span>}
         </div>
         <div>
-          <b>{suspect.name}</b>
+          <b>{suspect.full_name}</b>
           <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>{suspect.occupation}</div>
         </div>
       </div>
@@ -373,7 +373,7 @@ function SuspectArt({
             await fetch(`/api/admin/cases/${slug}/suspects`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ op: 'update', data: { id: suspect.id, name: suspect.name, photo_path: path, physical_description: phys, distinctive_features: feat, image_prompt: prompt } }),
+              body: JSON.stringify({ op: 'update', data: { id: suspect.id, full_name: suspect.full_name, photo_path: path, physical_description: phys, distinctive_features: feat, image_prompt: prompt } }),
             });
             onChanged();
           }}

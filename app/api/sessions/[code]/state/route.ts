@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
-import {
-  getSessionByCode,
-  getCatalog,
-  getDeliveredCodes,
-  processDueEvents,
-  toPublicEvidence,
-} from '@/lib/server/game';
+import { getSessionByCode, getOpenEvidence, processDueEvents } from '@/lib/server/game';
+import { toLegacyPublic } from '@/lib/server/evidence';
 import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { secondsRemaining } from '@/lib/engine/timeline';
-import { MAX_HINTS } from '@/lib/domain';
+import { MAX_HINTS, SUSPECT_PUBLIC_COLUMNS, type SuspectPublic } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,29 +21,20 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
 
   const svc = createServiceClient();
 
-  const [{ data: rawMessages }, catalog, deliveredCodes, { data: suspectRows }, { data: verdict }] =
+  const [{ data: rawMessages }, openEvidence, { data: suspectRows }, { data: verdict }] =
     await Promise.all([
       svc.from('chat_messages').select('*').eq('session_id', ctx.session.id).order('at', { ascending: true }),
-      getCatalog(ctx.caseRow.id, ctx.variant.id),
-      getDeliveredCodes(ctx.session.id),
+      getOpenEvidence(ctx),
       svc
         .from('suspects')
-        .select('id, name, age, occupation, relation, description, alibi, photo_path, physical_description, distinctive_features')
+        .select(SUSPECT_PUBLIC_COLUMNS) // SOLO ficha pública — jamás internal_notes ni data de variante
         .eq('case_id', ctx.caseRow.id)
         .order('sort_order', { ascending: true }),
       svc.from('verdicts').select('*').eq('session_id', ctx.session.id).maybeSingle(),
     ]);
 
-  const deliveredSet = new Set(deliveredCodes);
-
-  // Evidencia entregada, con URL de media firmada a 10 min (anti-descarga).
-  const deliveredItems = catalog.filter((e) => deliveredSet.has(e.code));
-  const evidence = await Promise.all(
-    deliveredItems.map(async (e) => ({
-      ...toPublicEvidence(e),
-      mediaUrl: await signedUrl(e.media_path, SESSION_MEDIA_TTL),
-    })),
-  );
+  // Evidencia abierta → forma legacy con URL de media firmada a 10 min (anti-descarga).
+  const evidence = await Promise.all(openEvidence.map((e) => toLegacyPublic(e)));
   const evByCode = new Map(evidence.map((e) => [e.code, e]));
 
   const messages = (rawMessages ?? []).map((m) => ({
@@ -62,18 +48,18 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     evidence: m.evidence_code ? evByCode.get(m.evidence_code) ?? null : null,
   }));
 
-  // Sospechosos completos (con foto firmada). Material de investigación, no la solución.
+  // Ficha PÚBLICA de sospechosos (con foto firmada). Neutra, igual en toda variante.
   const suspects = await Promise.all(
-    (suspectRows ?? []).map(async (s) => ({
+    ((suspectRows ?? []) as SuspectPublic[]).map(async (s) => ({
       id: s.id,
-      name: s.name,
+      full_name: s.full_name,
       age: s.age,
       occupation: s.occupation,
-      relation: s.relation,
-      description: s.description,
-      alibi: s.alibi,
+      relationship_to_victim: s.relationship_to_victim,
       physical_description: s.physical_description,
       distinctive_features: s.distinctive_features,
+      accent_or_speech: s.accent_or_speech,
+      typical_attire: s.typical_attire,
       photoUrl: await signedUrl(s.photo_path, SESSION_MEDIA_TTL),
     })),
   );

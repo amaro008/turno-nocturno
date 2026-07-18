@@ -32,21 +32,22 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
     if (!parsed.success) return NextResponse.json({ error: 'invalid', issues: parsed.error.flatten() }, { status: 400 });
     const s = parsed.data;
     const fields = {
-      name: s.name,
+      full_name: s.full_name,
       age: s.age ?? null,
       occupation: s.occupation ?? null,
-      relation: s.relation ?? null,
-      description: s.description ?? null,
-      alibi: s.alibi ?? null,
+      relationship_to_victim: s.relationship_to_victim ?? null,
       photo_path: s.photo_path ?? null,
       physical_description: s.physical_description ?? '',
       distinctive_features: s.distinctive_features ?? '',
+      accent_or_speech: s.accent_or_speech ?? null,
+      typical_attire: s.typical_attire ?? null,
+      internal_notes: s.internal_notes ?? null,
       image_prompt: s.image_prompt ?? '',
     };
     if (op === 'create') {
       const { count } = await svc.from('suspects').select('*', { count: 'exact', head: true }).eq('case_id', caseRow.id);
       await svc.from('suspects').insert({ ...fields, case_id: caseRow.id, sort_order: count ?? 0 });
-      await logAdminAction(admin.id, 'suspect_create', 'case', caseRow.id, { name: s.name });
+      await logAdminAction(admin.id, 'suspect_create', 'case', caseRow.id, { name: s.full_name });
     } else if (op === 'update' && s.id) {
       await svc.from('suspects').update(fields).eq('id', s.id).eq('case_id', caseRow.id);
     }

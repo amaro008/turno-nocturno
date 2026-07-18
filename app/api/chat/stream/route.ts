@@ -7,10 +7,9 @@
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
 import { anthropic, COMMANDER_MODEL } from '@/lib/server/anthropic';
-import { getSessionByCode, getCatalog, getDeliveredCodes, deliverEvidence } from '@/lib/server/game';
+import { getSessionByCode, getCommanderData, deliverEvidence } from '@/lib/server/game';
 import { buildCommanderSystem, ENVIAR_EVIDENCIA_TOOL } from '@/lib/server/prompts/commander.build';
 import { isExtractionAttempt } from '@/lib/server/guardrails';
-import { canDeliver } from '@/lib/engine/evidence-gating';
 import { minutesElapsed } from '@/lib/engine/timeline';
 import { MAX_HINTS } from '@/lib/domain';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -65,27 +64,9 @@ export async function POST(req: Request) {
     });
   }
 
-  // 3) Estado para el prompt
+  // 3) Estado para el prompt (contexto autorizado: ver commander.build.ts)
   const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
-  const catalog = await getCatalog(ctx.caseRow.id, ctx.variant.id);
-  const delivered = await getDeliveredCodes(ctx.session.id);
-  const deliveredSet = new Set(delivered);
-
-  const deliveredEvidence = catalog
-    .filter((e) => deliveredSet.has(e.code))
-    .map((e) => ({ code: e.code, title: e.title }));
-
-  const deliverableEvidence = catalog
-    .filter((e) => !deliveredSet.has(e.code))
-    .filter(
-      (e) =>
-        canDeliver(e.code, catalog, {
-          variantId: ctx.variant.id,
-          elapsedMin,
-          unlockedCodes: delivered,
-        }).ok,
-    )
-    .map((e) => ({ code: e.code, title: e.title }));
+  const { suspects, evidence } = await getCommanderData(ctx);
 
   const system = buildCommanderSystem({
     caseTitle: ctx.caseRow.title,
@@ -94,8 +75,8 @@ export async function POST(req: Request) {
     commanderContext: ctx.variant.commander_context,
     elapsedMin,
     timeLimitMin: ctx.caseRow.time_limit_min,
-    deliveredEvidence,
-    deliverableEvidence,
+    suspects,
+    evidence,
     hintsUsed: ctx.session.hints_used,
     maxHints: MAX_HINTS,
   });

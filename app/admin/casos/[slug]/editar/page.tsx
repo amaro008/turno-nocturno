@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/server/supabase';
+import { loadCaseEvidenceBase, assembleEvidence } from '@/lib/server/evidence';
 import CaseEditor from '../../_components/CaseEditor';
-import type { Case, Suspect, EvidenceItem, Variant, TimelineEvent } from '@/lib/domain';
+import type { Case, SuspectFull, EvidenceFull, Variant, TimelineEvent } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +12,9 @@ export default async function EditarCasoPage({ params }: { params: { slug: strin
   const { data: caseRow } = await svc.from('cases').select('*').eq('slug', params.slug).maybeSingle();
   if (!caseRow) notFound();
 
-  const [{ data: suspects }, { data: evidence }, { data: variants }, { data: timeline }] = await Promise.all([
+  const [{ data: suspects }, evidence, { data: variants }, { data: timeline }] = await Promise.all([
     svc.from('suspects').select('*').eq('case_id', caseRow.id).order('sort_order', { ascending: true }),
-    svc.from('evidence_items').select('*').eq('case_id', caseRow.id).order('code', { ascending: true }),
+    assembleEvidence(await loadCaseEvidenceBase(caseRow.id)),
     svc.from('variants').select('*').eq('case_id', caseRow.id).order('code', { ascending: true }),
     svc.from('case_timeline').select('*').eq('case_id', caseRow.id).order('minute', { ascending: true }),
   ]);
@@ -35,8 +36,8 @@ export default async function EditarCasoPage({ params }: { params: { slug: strin
 
         <CaseEditor
           caseRow={caseRow as Case}
-          initialSuspects={(suspects ?? []) as Suspect[]}
-          initialEvidence={(evidence ?? []) as EvidenceItem[]}
+          initialSuspects={(suspects ?? []) as SuspectFull[]}
+          initialEvidence={evidence as EvidenceFull[]}
           initialVariants={(variants ?? []) as Variant[]}
           initialTimeline={(timeline ?? []) as TimelineEvent[]}
         />

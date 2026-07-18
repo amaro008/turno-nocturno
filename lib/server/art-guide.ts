@@ -1,5 +1,5 @@
 // Genera el Markdown de la "Guía de Arte" de un caso (para content/casos/{slug}/).
-import type { Case, Suspect, CaseVisualPrompt, Variant } from '@/lib/domain';
+import type { Case, SuspectFull, CaseVisualPrompt, Variant } from '@/lib/domain';
 import { IMAGE_SPECS, type ImageSpec } from '@/lib/domain/image-specs';
 
 // Slots relevantes para un caso, en orden de aparición.
@@ -43,7 +43,7 @@ function dimensionsTableBlock(): string {
 
 export function buildArtGuideMarkdown(
   caseRow: Case,
-  suspects: Suspect[],
+  suspects: SuspectFull[],
   visualPrompts: CaseVisualPrompt[],
   variants: Variant[],
 ): string {
@@ -80,7 +80,7 @@ export function buildArtGuideMarkdown(
 
   for (const s of suspects) {
     parts.push(
-      `### ${s.name}${s.occupation ? ` — ${s.occupation}` : ''}`,
+      `### ${s.full_name}${s.occupation ? ` — ${s.occupation}` : ''}`,
       s.physical_description ? `**Físico:** ${s.physical_description}` : '',
       s.distinctive_features ? `**Rasgos distintivos:** ${s.distinctive_features}` : '',
       '```',

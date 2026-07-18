@@ -73,24 +73,13 @@ export const ERA_PROFILES = [
   { value: 'default', label: 'Sin perfil' },
 ] as const;
 
-// ---- Sospechoso ----
-export interface Suspect {
-  id: string;
-  case_id: string;
-  name: string;
-  age: number | null;
-  occupation: string | null;
-  relation: string | null;
-  description: string | null;
-  alibi: string | null;
-  photo_path: string | null;
-  sort_order: number;
-  // Dirección de arte (Iteración 3, Fase 3)
-  physical_description: string;
-  distinctive_features: string;
-  image_prompt: string;
-  created_at: string;
-}
+// ---- Sospechoso (Refactor F1: público vs. variante) ----
+export type {
+  SuspectPublic,
+  SuspectFull,
+  SuspectVariantData,
+} from './suspect';
+export { SUSPECT_PUBLIC_COLUMNS, toSuspectPublic } from './suspect';
 
 // ---- Prompt visual de un asset del caso (escena, VHS, evidencia) ----
 export type VisualMediaKind = 'image' | 'video';
@@ -132,26 +121,30 @@ export interface VerdictRubric {
   why_summary: string;
 }
 
-// ---- Evidencia ----
-export type EvidenceKind = 'audio' | 'video' | 'document' | 'hint';
-export type EvidenceScope = 'shared' | 'variant';
-export type EvidenceDelivery = 'chat_push' | 'on_request' | 'code_only';
-
-export interface EvidenceItem {
-  id: string;
-  case_id: string | null;
-  variant_id: string | null;
-  code: string;
-  kind: EvidenceKind;
-  scope: EvidenceScope;
-  title: string;
-  body_md: string | null;
-  media_path: string | null;
-  transcript: string | null;
-  unlocked_by: string[];
-  deliverable_from_minute: number;
-  delivery: EvidenceDelivery;
-}
+// ---- Evidencia (Refactor F1: base + contenido tipado) ----
+export type {
+  EvidenceType,
+  EvidenceScope,
+  EvidenceBase,
+  EvidenceFull,
+  DocumentContent,
+  PhotoContent,
+  AudioContent,
+  VideoContent,
+  TestimonyContent,
+  RecordContent,
+} from './evidence';
+export {
+  isDocument,
+  isPhoto,
+  isAudio,
+  isVideo,
+  isTestimony,
+  isRecord,
+  EVIDENCE_CONTENT_TABLE,
+  evidenceMediaPath,
+  evidenceText,
+} from './evidence';
 
 // ---- Timeline de eventos temporales ----
 export type TimelineAction = 'message' | 'voice' | 'evidence' | 'pressure' | 'deadline';

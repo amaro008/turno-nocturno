@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { Suspect } from '@/lib/domain';
+import type { SuspectFull } from '@/lib/domain';
 import { getSpec } from '@/lib/domain/image-specs';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
-type Draft = Partial<Suspect>;
+type Draft = Partial<SuspectFull>;
 
 export default function SuspectsTab({
   slug,
@@ -14,15 +14,15 @@ export default function SuspectsTab({
   setSuspects,
 }: {
   slug: string;
-  suspects: Suspect[];
-  setSuspects: (s: Suspect[]) => void;
+  suspects: SuspectFull[];
+  setSuspects: (s: SuspectFull[]) => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function persist(op: 'create' | 'update' | 'delete', data: unknown) {
     setError(null);
-    const res = await entityOp<Suspect>(slug, 'suspects', op, data);
+    const res = await entityOp<SuspectFull>(slug, 'suspects', op, data);
     if (!res.ok) {
       setError('No se pudo guardar el sospechoso.');
       return false;
@@ -37,7 +37,7 @@ export default function SuspectsTab({
     if (j < 0 || j >= next.length) return;
     [next[idx], next[j]] = [next[j], next[idx]];
     setSuspects(next);
-    await entityOp<Suspect>(slug, 'suspects', 'reorder', { ids: next.map((s) => s.id) });
+    await entityOp<SuspectFull>(slug, 'suspects', 'reorder', { ids: next.map((s) => s.id) });
   }
 
   return (
@@ -112,7 +112,7 @@ function SuspectCard({
   const [f, setF] = useState<Draft>({ ...suspect });
   const [busy, setBusy] = useState(false);
 
-  const set = (k: keyof Suspect, v: unknown) => setF((prev) => ({ ...prev, [k]: v }));
+  const set = (k: keyof SuspectFull, v: unknown) => setF((prev) => ({ ...prev, [k]: v }));
 
   return (
     <div className="entity">
@@ -123,7 +123,7 @@ function SuspectCard({
             <button disabled={(index ?? 0) >= (total ?? 1) - 1} onClick={() => onMove(1)} aria-label="Bajar">▼</button>
           </span>
         )}
-        <span className="entity-title">{f.name || (isNew ? 'Nuevo sospechoso' : 'Sin nombre')}</span>
+        <span className="entity-title">{f.full_name || (isNew ? 'Nuevo sospechoso' : 'Sin nombre')}</span>
         {f.occupation && <span className="entity-meta">· {f.occupation}</span>}
         <span className="entity-spacer" />
         {!isNew && <span className="entity-meta">{open ? 'cerrar' : 'editar'}</span>}
@@ -134,7 +134,7 @@ function SuspectCard({
           <div className="form-grid">
             <div>
               <label className="label">Nombre</label>
-              <input className="input" value={f.name ?? ''} onChange={(e) => set('name', e.target.value)} />
+              <input className="input" value={f.full_name ?? ''} onChange={(e) => set('full_name', e.target.value)} />
             </div>
             <div>
               <label className="label">Edad</label>
@@ -145,16 +145,29 @@ function SuspectCard({
               <input className="input" value={f.occupation ?? ''} onChange={(e) => set('occupation', e.target.value)} />
             </div>
             <div>
-              <label className="label">Relación con la víctima</label>
-              <input className="input" value={f.relation ?? ''} onChange={(e) => set('relation', e.target.value)} />
+              <label className="label">Vínculo con la víctima (objetivo)</label>
+              <input className="input" placeholder="empleado de la empresa, hermana de la víctima…" value={f.relationship_to_victim ?? ''} onChange={(e) => set('relationship_to_victim', e.target.value)} />
             </div>
             <div className="full">
-              <label className="label">Descripción</label>
-              <textarea className="input" value={f.description ?? ''} onChange={(e) => set('description', e.target.value)} />
+              <label className="label">Descripción física (neutra)</label>
+              <textarea className="input" value={f.physical_description ?? ''} onChange={(e) => set('physical_description', e.target.value)} />
             </div>
             <div className="full">
-              <label className="label">Coartada declarada</label>
-              <textarea className="input" value={f.alibi ?? ''} onChange={(e) => set('alibi', e.target.value)} />
+              <label className="label">Rasgos distintivos (observables)</label>
+              <textarea className="input" placeholder="Tatuajes, cicatrices, lentes… marcas visibles, no secretos." value={f.distinctive_features ?? ''} onChange={(e) => set('distinctive_features', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Acento / habla</label>
+              <input className="input" value={f.accent_or_speech ?? ''} onChange={(e) => set('accent_or_speech', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Vestimenta habitual</label>
+              <input className="input" value={f.typical_attire ?? ''} onChange={(e) => set('typical_attire', e.target.value)} />
+            </div>
+            <div className="full">
+              <label className="label">Notas internas (admin-only)</label>
+              <textarea className="input" placeholder="Notas del autor. Jamás llegan al cliente ni al Comandante." value={f.internal_notes ?? ''} onChange={(e) => set('internal_notes', e.target.value)} />
+              <div className="field-hint">La coartada y el móvil por variante se editan en la pestaña Variantes.</div>
             </div>
             <div className="full">
               <MediaUploader
@@ -172,7 +185,7 @@ function SuspectCard({
           <div className="row-actions">
             <button
               className="btn primary"
-              disabled={busy || !f.name}
+              disabled={busy || !f.full_name}
               onClick={async () => {
                 setBusy(true);
                 const ok = await onSave(f);

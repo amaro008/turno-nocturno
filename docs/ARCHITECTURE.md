@@ -52,12 +52,25 @@ La separación es solo de rutas y middleware.
 - **Regla clave:** las rutas admin verifican rol tanto en middleware como en la API. Doble
   check. Nada de "el frontend no muestra el botón" como única defensa.
 
-## Comandante — arquitectura (heredada de v0.3)
-- Texto: Anthropic streaming por `/api/chat/stream`. System prompt = personaje + reglas +
-  `variants.commander_context`. Nunca incluye culprit.
-- Voz: pregrabada (eventos) + generada (respuestas relevantes) con misma voz de marca
-- Tool lógica `enviar_evidencia(code)` validada en backend contra BD
-- Evaluación de veredicto en llamada aislada, sin historial del chat
+## Comandante — arquitectura (Refactor F1)
+- Texto: Anthropic streaming por `/api/chat/stream`. El system prompt se arma en
+  `lib/server/prompts/commander.build.ts` a partir de `getCommanderData(ctx)` (`lib/server/game.ts`).
+- **Contexto AUTORIZADO** que recibe el modelo:
+  - Meta del caso + `variants.commander_context` (verdad de la variante, sin nombrar al culpable).
+  - Ficha **pública** de cada sospechoso (lo mismo que ve el jugador).
+  - `suspect_variant_data` de la variante sorteada: `alibi_declared`, `motive_apparent`,
+    `variant_specific_notes` — para responder dudas sobre coartadas/móviles.
+  - Lista **completa** de evidencia visible con su `public_description` y flag ABIERTA/NO ABIERTA
+    (sabe qué existe y qué no puede revelar todavía).
+  - Contenido completo **solo** de las evidencias ya abiertas.
+- **Nunca** recibe: `is_culprit_in_variant`, `variants.culprit`/`culprit_suspect_id`/
+  `solution_narrative`, `evidence_items.admin_notes`, ni el contenido de evidencia no abierta.
+  (Ver el encabezado de `commander.build.ts` con la lista explícita incluido/excluido.)
+- Tool lógica `enviar_evidencia(code)` validada en backend (`canOpen`): visible a la variante +
+  abierta por initial/minuto/evento. Reparto principal: evidencia **inicial abierta desde el
+  minuto 0** + eventos guionados del `case_timeline`.
+- Voz: pregrabada (eventos) + generada (respuestas relevantes) con misma voz de marca.
+- Evaluación de veredicto en llamada aislada, sin historial del chat.
 
 ## Motor de eventos temporales
 - Tabla `case_timeline`, scheduler cliente hace polling a `/api/sessions/[id]/tick`

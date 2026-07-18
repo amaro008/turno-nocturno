@@ -5,10 +5,18 @@
 // ============================================================================
 
 import { createServiceClient } from './supabase';
-import { canDeliver, visibleCatalog } from '@/lib/engine/evidence-gating';
+import { canOpen, visibleForVariant, openReason } from '@/lib/engine/evidence-gating';
 import { minutesElapsed } from '@/lib/engine/timeline';
 import { dueEvents } from '@/lib/engine/timeline';
-import type { Case, EvidenceItem, GameSession, TimelineEvent, Variant } from '@/lib/domain';
+import {
+  loadCaseEvidenceBase,
+  assembleEvidence,
+  toLegacyPublic,
+  type LegacyPublicEvidence,
+} from './evidence';
+import { evidenceText, SUSPECT_PUBLIC_COLUMNS } from '@/lib/domain';
+import type { Case, EvidenceBase, EvidenceFull, GameSession, SuspectPublic, TimelineEvent, Variant } from '@/lib/domain';
+import type { CommanderSuspect, CommanderEvidence } from './prompts/commander.build';
 
 export interface SessionContext {
   session: GameSession;
@@ -17,27 +25,7 @@ export interface SessionContext {
   variantCode: string;
 }
 
-export interface PublicEvidence {
-  id: string;
-  code: string;
-  kind: EvidenceItem['kind'];
-  title: string;
-  body_md: string | null;
-  transcript: string | null;
-  media_path: string | null;
-}
-
-export function toPublicEvidence(e: EvidenceItem): PublicEvidence {
-  return {
-    id: e.id,
-    code: e.code,
-    kind: e.kind,
-    title: e.title,
-    body_md: e.body_md,
-    transcript: e.transcript,
-    media_path: e.media_path,
-  };
-}
+export type PublicEvidence = LegacyPublicEvidence;
 
 /** Carga sesión por código de acceso, validando propiedad del usuario. */
 export async function getSessionByCode(
@@ -67,14 +55,13 @@ export async function getSessionByCode(
   };
 }
 
-/** Catálogo de evidencia visible para la sesión (shared + variante). */
-export async function getCatalog(caseId: string, variantId: string): Promise<EvidenceItem[]> {
-  const svc = createServiceClient();
-  const { data } = await svc.from('evidence_items').select('*').eq('case_id', caseId);
-  return visibleCatalog((data ?? []) as EvidenceItem[], variantId);
+/** Catálogo base visible para la sesión (shared + variante sorteada). */
+export async function getCatalog(caseId: string, variantId: string | null): Promise<EvidenceBase[]> {
+  const all = await loadCaseEvidenceBase(caseId);
+  return visibleForVariant(all, variantId);
 }
 
-/** Códigos de evidencia ya entregados/desbloqueados en la sesión. */
+/** Códigos de evidencia desbloqueados manualmente (código/herramienta) en la sesión. */
 export async function getDeliveredCodes(sessionId: string): Promise<string[]> {
   const svc = createServiceClient();
   const { data } = await svc
@@ -85,7 +72,7 @@ export async function getDeliveredCodes(sessionId: string): Promise<string[]> {
   return (data ?? []).map((r) => String((r.payload as { code?: string }).code)).filter(Boolean);
 }
 
-async function getFiredTimelineIds(sessionId: string): Promise<string[]> {
+export async function getFiredTimelineIds(sessionId: string): Promise<string[]> {
   const svc = createServiceClient();
   const { data } = await svc
     .from('session_events')
@@ -96,48 +83,174 @@ async function getFiredTimelineIds(sessionId: string): Promise<string[]> {
 }
 
 /**
- * Entrega una evidencia (con gating). Inserta la tarjeta en el chat y el evento
- * de unlock. Idempotente: si ya estaba entregada, no la duplica.
- * Devuelve el item público o null + razón.
+ * Evidencia ABIERTA para la sesión (initial + tiempo + eventos disparados +
+ * desbloqueos manuales), ensamblada con contenido. Base para /state y managers.
+ */
+export async function getOpenEvidence(ctx: SessionContext): Promise<EvidenceFull[]> {
+  const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
+  const [catalog, unlockedCodes, firedEventIds] = await Promise.all([
+    getCatalog(ctx.caseRow.id, ctx.variant.id),
+    getDeliveredCodes(ctx.session.id),
+    getFiredTimelineIds(ctx.session.id),
+  ]);
+  const openBases = catalog.filter(
+    (e) => openReason(e, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) !== null,
+  );
+  return assembleEvidence(openBases);
+}
+
+/**
+ * Datos AUTORIZADOS para el system prompt del Comandante: ficha pública de
+ * sospechosos + subset de variante (sin culpabilidad) + lista de evidencia con
+ * public_description (todas) y contenido solo de las abiertas.
+ */
+export async function getCommanderData(
+  ctx: SessionContext,
+): Promise<{ suspects: CommanderSuspect[]; evidence: CommanderEvidence[] }> {
+  const svc = createServiceClient();
+  const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
+
+  const [catalog, unlockedCodes, firedEventIds, { data: suspectRows }, { data: svd }] = await Promise.all([
+    getCatalog(ctx.caseRow.id, ctx.variant.id),
+    getDeliveredCodes(ctx.session.id),
+    getFiredTimelineIds(ctx.session.id),
+    svc.from('suspects').select(SUSPECT_PUBLIC_COLUMNS).eq('case_id', ctx.caseRow.id).order('sort_order'),
+    svc
+      .from('suspect_variant_data')
+      .select('suspect_id, alibi_declared, motive_apparent, variant_specific_notes') // NUNCA is_culprit_in_variant
+      .eq('variant_id', ctx.variant.id),
+  ]);
+
+  const vdBySuspect = new Map(
+    ((svd ?? []) as { suspect_id: string; alibi_declared: string | null; motive_apparent: string | null; variant_specific_notes: string | null }[]).map(
+      (r) => [r.suspect_id, r],
+    ),
+  );
+
+  const suspects: CommanderSuspect[] = ((suspectRows ?? []) as SuspectPublic[]).map((s) => {
+    const vd = vdBySuspect.get(s.id);
+    return {
+      full_name: s.full_name,
+      occupation: s.occupation,
+      relationship_to_victim: s.relationship_to_victim,
+      physical_description: s.physical_description,
+      distinctive_features: s.distinctive_features,
+      alibi_declared: vd?.alibi_declared ?? null,
+      motive_apparent: vd?.motive_apparent ?? null,
+      variant_notes: vd?.variant_specific_notes ?? null,
+    };
+  });
+
+  const openSet = new Set(
+    catalog
+      .filter((e) => openReason(e, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) !== null)
+      .map((e) => e.code),
+  );
+  const openFull = await assembleEvidence(catalog.filter((e) => openSet.has(e.code)));
+  const textByCode = new Map(openFull.map((e) => [e.code, evidenceText(e)]));
+
+  const evidence: CommanderEvidence[] = catalog.map((e) => ({
+    code: e.code,
+    title: e.title,
+    type: e.type,
+    public_description: e.public_description,
+    open: openSet.has(e.code),
+    content: openSet.has(e.code) ? textByCode.get(e.code) ?? null : undefined,
+  }));
+
+  return { suspects, evidence };
+}
+
+export interface EvidenceListItem {
+  id: string;
+  code: string;
+  title: string;
+  type: EvidenceBase['type'];
+  scope: EvidenceBase['scope'];
+  public_description: string;
+  open: boolean;
+  unlocked_at_minute: number | null;
+}
+
+/** Listado del expediente: TODAS las visibles con public_description + flag `open`. */
+export async function getEvidenceListing(ctx: SessionContext): Promise<EvidenceListItem[]> {
+  const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
+  const [catalog, unlockedCodes, firedEventIds] = await Promise.all([
+    getCatalog(ctx.caseRow.id, ctx.variant.id),
+    getDeliveredCodes(ctx.session.id),
+    getFiredTimelineIds(ctx.session.id),
+  ]);
+  return catalog.map((e) => ({
+    id: e.id,
+    code: e.code,
+    title: e.title,
+    type: e.type,
+    scope: e.scope,
+    public_description: e.public_description,
+    open: openReason(e, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) !== null,
+    unlocked_at_minute: e.unlocked_at_minute,
+  }));
+}
+
+/** Detalle de una pieza: contenido completo SOLO si está abierta en la sesión. */
+export async function getEvidenceDetail(ctx: SessionContext, code: string): Promise<PublicEvidence | null> {
+  const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
+  const [catalog, unlockedCodes, firedEventIds] = await Promise.all([
+    getCatalog(ctx.caseRow.id, ctx.variant.id),
+    getDeliveredCodes(ctx.session.id),
+    getFiredTimelineIds(ctx.session.id),
+  ]);
+  const base = catalog.find((e) => e.code === code.toUpperCase());
+  if (!base) return null;
+  if (openReason(base, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) === null) return null;
+  const [full] = await assembleEvidence([base]);
+  return toLegacyPublic(full);
+}
+
+/**
+ * Abre una evidencia por petición (código impreso / herramienta del Comandante).
+ * Inserta la tarjeta en el chat y el evento 'unlock'. Idempotente.
+ * `viaEvent` omite la compuerta de tiempo (la dispara un evento del Comandante).
  */
 export async function deliverEvidence(
   ctx: SessionContext,
   code: string,
-  opts: { elapsedMin: number; announce?: string } = { elapsedMin: 0 },
+  opts: { elapsedMin: number; viaEvent?: boolean } = { elapsedMin: 0 },
 ): Promise<{ ok: true; item: PublicEvidence } | { ok: false; reason: string }> {
   const svc = createServiceClient();
   const catalog = await getCatalog(ctx.caseRow.id, ctx.variant.id);
   const delivered = await getDeliveredCodes(ctx.session.id);
 
-  if (delivered.includes(code)) {
-    const existing = catalog.find((e) => e.code === code);
-    if (existing) return { ok: true, item: toPublicEvidence(existing) };
-  }
+  const base = catalog.find((e) => e.code === code);
+  const already = delivered.includes(code);
 
-  const result = canDeliver(code, catalog, {
-    variantId: ctx.variant.id,
-    elapsedMin: opts.elapsedMin,
-    unlockedCodes: delivered,
-  });
-  if (!result.ok) return { ok: false, reason: result.reason };
+  const result = canOpen(
+    code,
+    catalog,
+    { variantId: ctx.variant.id, elapsedMin: opts.elapsedMin, unlockedCodes: delivered },
+    opts.viaEvent,
+  );
+  if (!already && !result.ok) return { ok: false, reason: result.reason };
 
-  // Evento de unlock (fuente de verdad de "entregada")
-  await svc.from('session_events').insert({
-    session_id: ctx.session.id,
-    type: 'unlock',
-    payload: { code },
-  });
+  const target = base ?? (result.ok ? result.item : null);
+  if (!target) return { ok: false, reason: 'not_found' };
 
-  // Tarjeta en el chat
+  const [full] = await assembleEvidence([target]);
+  const item = await toLegacyPublic(full);
+
+  if (already) return { ok: true, item };
+
+  // Evento de unlock (registro del desbloqueo manual) + tarjeta en el chat.
+  await svc.from('session_events').insert({ session_id: ctx.session.id, type: 'unlock', payload: { code } });
   await svc.from('chat_messages').insert({
     session_id: ctx.session.id,
     role: 'commander',
     kind: 'evidence_card',
-    content: result.item.title,
+    content: target.title,
     evidence_code: code,
   });
 
-  return { ok: true, item: toPublicEvidence(result.item) };
+  return { ok: true, item };
 }
 
 /**
@@ -205,7 +318,7 @@ export async function processDueEvents(ctx: SessionContext, now: Date = new Date
       if (primary) codes.push(primary);
       if (payload.also) codes.push(...payload.also);
       for (const c of codes) {
-        await deliverEvidence(ctx, c, { elapsedMin });
+        await deliverEvidence(ctx, c, { elapsedMin, viaEvent: true });
       }
     }
     fired += 1;

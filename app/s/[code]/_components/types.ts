@@ -3,8 +3,10 @@
 export interface PublicEvidence {
   id: string;
   code: string;
-  kind: 'audio' | 'video' | 'document' | 'hint';
+  kind: 'audio' | 'video' | 'document';
+  type: 'document' | 'photo' | 'audio' | 'video' | 'testimony' | 'record';
   title: string;
+  public_description: string;
   body_md: string | null;
   transcript: string | null;
   media_path: string | null;
@@ -13,14 +15,14 @@ export interface PublicEvidence {
 
 export interface SessionSuspect {
   id: string;
-  name: string;
+  full_name: string;
   age: number | null;
   occupation: string | null;
-  relation: string | null;
-  description: string | null;
-  alibi: string | null;
+  relationship_to_victim: string | null;
   physical_description: string | null;
   distinctive_features: string | null;
+  accent_or_speech: string | null;
+  typical_attire: string | null;
   photoUrl: string | null;
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { TimelineEvent, EvidenceItem } from '@/lib/domain';
+import type { TimelineEvent, EvidenceFull } from '@/lib/domain';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
@@ -30,7 +30,7 @@ export default function TimelineTab({
   slug: string;
   timeline: TimelineEvent[];
   setTimeline: (t: TimelineEvent[]) => void;
-  evidence: EvidenceItem[];
+  evidence: EvidenceFull[];
 }) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +120,7 @@ function TimelineCard({
 }: {
   slug: string;
   event: Draft;
-  evidence: EvidenceItem[];
+  evidence: EvidenceFull[];
   isNew?: boolean;
   onSave: (data: Draft) => Promise<boolean>;
   onDelete?: () => void;

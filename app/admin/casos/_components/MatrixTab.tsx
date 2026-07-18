@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Case, EvidenceItem, Variant, ValidationMatrix } from '@/lib/domain';
+import type { Case, EvidenceFull, Variant, ValidationMatrix } from '@/lib/domain';
 
 export default function MatrixTab({
   caseRow,
@@ -10,7 +10,7 @@ export default function MatrixTab({
   unvalidated,
 }: {
   caseRow: Case;
-  evidence: EvidenceItem[];
+  evidence: EvidenceFull[];
   variants: Variant[];
   unvalidated: number;
 }) {

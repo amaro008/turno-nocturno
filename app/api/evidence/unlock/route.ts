@@ -25,14 +25,11 @@ export async function POST(req: Request) {
   const target = evidence_code.trim().toUpperCase();
   const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
 
-  // Verificar que el código exista en el catálogo de la sesión (por unlocked_by o code directo)
+  // Verificar que el código exista en el catálogo visible de la sesión.
   const catalog = await getCatalog(ctx.caseRow.id, ctx.variant.id);
   const svc = createServiceClient();
 
-  // Match por code directo o por membresía en unlocked_by de alguna pieza.
-  const direct = catalog.find((e) => e.code.toUpperCase() === target);
-  const byUnlock = catalog.find((e) => (e.unlocked_by ?? []).some((u) => u.toUpperCase() === target));
-  const item = direct ?? byUnlock;
+  const item = catalog.find((e) => e.code.toUpperCase() === target);
 
   if (!item) {
     await svc.from('session_events').insert({

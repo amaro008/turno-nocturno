@@ -1,12 +1,81 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { EvidenceItem, Variant } from '@/lib/domain';
-import { getSpec } from '@/lib/domain/image-specs';
+import type { EvidenceFull, EvidenceType, Variant } from '@/lib/domain';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 
-type Draft = Partial<EvidenceItem>;
+const TYPES: { value: EvidenceType; label: string }[] = [
+  { value: 'document', label: 'Documento' },
+  { value: 'photo', label: 'Foto' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'video', label: 'Video' },
+  { value: 'testimony', label: 'Testimonio' },
+  { value: 'record', label: 'Registro' },
+];
+
+// Estado plano del formulario (base + contenido de cualquier tipo).
+interface Draft {
+  id?: string;
+  code?: string;
+  title?: string;
+  type?: EvidenceType;
+  scope?: 'shared' | 'variant';
+  variant_id?: string | null;
+  public_description?: string;
+  admin_notes?: string;
+  initial?: boolean;
+  unlocked_at_minute?: number | null;
+  // contenido
+  body_md?: string | null;
+  transcript?: string | null;
+  image_path?: string | null;
+  audio_path?: string | null;
+  video_path?: string | null;
+  caption?: string | null;
+  witness_name?: string | null;
+  record_type?: string | null;
+}
+
+function toDraft(e: EvidenceFull): Draft {
+  const base: Draft = {
+    id: e.id, code: e.code, title: e.title, type: e.type, scope: e.scope,
+    variant_id: e.variant_id, public_description: e.public_description, admin_notes: e.admin_notes,
+    initial: e.initial, unlocked_at_minute: e.unlocked_at_minute,
+  };
+  switch (e.type) {
+    case 'document': return { ...base, body_md: e.content.body_md, transcript: e.content.transcript, image_path: e.content.image_path };
+    case 'photo': return { ...base, image_path: e.content.image_path, caption: e.content.caption };
+    case 'audio': return { ...base, audio_path: e.content.audio_path, transcript: e.content.transcript };
+    case 'video': return { ...base, video_path: e.content.video_path, transcript: e.content.transcript };
+    case 'testimony': return { ...base, witness_name: e.content.witness_name, body_md: e.content.body_md, audio_path: e.content.audio_path };
+    case 'record': return { ...base, record_type: e.content.record_type, body_md: e.content.body_md, image_path: e.content.image_path };
+  }
+}
+
+function toPayload(f: Draft) {
+  const content: Record<string, unknown> = {};
+  const t = f.type ?? 'document';
+  if (t === 'document') Object.assign(content, { body_md: f.body_md, transcript: f.transcript, image_path: f.image_path });
+  if (t === 'photo') Object.assign(content, { image_path: f.image_path, caption: f.caption });
+  if (t === 'audio') Object.assign(content, { audio_path: f.audio_path, transcript: f.transcript });
+  if (t === 'video') Object.assign(content, { video_path: f.video_path, transcript: f.transcript });
+  if (t === 'testimony') Object.assign(content, { witness_name: f.witness_name, body_md: f.body_md, audio_path: f.audio_path });
+  if (t === 'record') Object.assign(content, { record_type: f.record_type, body_md: f.body_md, image_path: f.image_path });
+  return {
+    id: f.id,
+    code: f.code,
+    title: f.title,
+    type: t,
+    scope: f.scope ?? 'shared',
+    variant_id: f.scope === 'variant' ? f.variant_id ?? null : null,
+    public_description: f.public_description ?? '',
+    admin_notes: f.admin_notes ?? '',
+    initial: f.initial ?? false,
+    unlocked_at_minute: f.initial ? null : f.unlocked_at_minute ?? null,
+    content,
+  };
+}
 
 export default function EvidenceTab({
   slug,
@@ -15,22 +84,20 @@ export default function EvidenceTab({
   variants,
 }: {
   slug: string;
-  evidence: EvidenceItem[];
-  setEvidence: (e: EvidenceItem[]) => void;
+  evidence: EvidenceFull[];
+  setEvidence: (e: EvidenceFull[]) => void;
   variants: Variant[];
 }) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fScope, setFScope] = useState<string>('all');
-  const [fKind, setFKind] = useState<string>('all');
+  const [fScope, setFScope] = useState('all');
+  const [fType, setFType] = useState('all');
 
   async function persist(op: 'create' | 'update' | 'delete', data: unknown) {
     setError(null);
-    const res = await entityOp<EvidenceItem>(slug, 'evidence', op, data);
+    const res = await entityOp<EvidenceFull>(slug, 'evidence', op, data);
     if (!res.ok) {
-      setError(
-        res.error === 'db' ? 'Código duplicado u otro error de base de datos.' : 'No se pudo guardar la evidencia.',
-      );
+      setError(res.error === 'db' ? 'Código duplicado u otro error de base de datos.' : 'No se pudo guardar la evidencia.');
       return false;
     }
     setEvidence(res.list ?? []);
@@ -38,18 +105,17 @@ export default function EvidenceTab({
   }
 
   const filtered = useMemo(
-    () =>
-      evidence.filter(
-        (e) => (fScope === 'all' || e.scope === fScope) && (fKind === 'all' || e.kind === fKind),
-      ),
-    [evidence, fScope, fKind],
+    () => evidence.filter((e) => (fScope === 'all' || e.scope === fScope) && (fType === 'all' || e.type === fType)),
+    [evidence, fScope, fType],
   );
-
-  const allCodes = evidence.map((e) => e.code);
 
   return (
     <div className="cpanel">
       {error && <div className="note-error tab-error">{error}</div>}
+      <p className="field-hint" style={{ marginTop: -4 }}>
+        Marca <b>inicial</b> lo que se abre desde el minuto 0. Lo demás se libera por minuto o por evento del Comandante.
+        La <b>descripción pública</b> es lo único que ve el jugador en el listado; las <b>notas internas</b> nunca salen.
+      </p>
 
       <div className="entity-filters">
         <select className="input" value={fScope} onChange={(e) => setFScope(e.target.value)}>
@@ -57,12 +123,9 @@ export default function EvidenceTab({
           <option value="shared">Compartida</option>
           <option value="variant">De variante</option>
         </select>
-        <select className="input" value={fKind} onChange={(e) => setFKind(e.target.value)}>
+        <select className="input" value={fType} onChange={(e) => setFType(e.target.value)}>
           <option value="all">Todos los tipos</option>
-          <option value="document">Documento</option>
-          <option value="audio">Audio</option>
-          <option value="video">Video</option>
-          <option value="hint">Pista</option>
+          {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
       </div>
 
@@ -72,22 +135,20 @@ export default function EvidenceTab({
           <EvidenceCard
             key={e.id}
             slug={slug}
-            item={e}
+            item={toDraft(e)}
             variants={variants}
-            allCodes={allCodes.filter((c) => c !== e.code)}
-            onSave={(data) => persist('update', { ...data, id: e.id })}
+            onSave={(data) => persist('update', toPayload({ ...data, id: e.id }))}
             onDelete={() => persist('delete', { id: e.id })}
           />
         ))}
         {adding && (
           <EvidenceCard
             slug={slug}
-            item={{ kind: 'document', scope: 'shared', delivery: 'on_request', deliverable_from_minute: 0, unlocked_by: [] }}
+            item={{ type: 'document', scope: 'shared', initial: true }}
             variants={variants}
-            allCodes={allCodes}
             isNew
             onSave={async (data) => {
-              const ok = await persist('create', data);
+              const ok = await persist('create', toPayload(data));
               if (ok) setAdding(false);
               return ok;
             }}
@@ -97,9 +158,7 @@ export default function EvidenceTab({
       </div>
 
       {!adding && (
-        <button className="btn ghost add-btn" onClick={() => setAdding(true)}>
-          + Agregar evidencia
-        </button>
+        <button className="btn ghost add-btn" onClick={() => setAdding(true)}>+ Agregar evidencia</button>
       )}
     </div>
   );
@@ -109,7 +168,6 @@ function EvidenceCard({
   slug,
   item,
   variants,
-  allCodes,
   isNew,
   onSave,
   onDelete,
@@ -118,7 +176,6 @@ function EvidenceCard({
   slug: string;
   item: Draft;
   variants: Variant[];
-  allCodes: string[];
   isNew?: boolean;
   onSave: (data: Draft) => Promise<boolean>;
   onDelete?: () => void;
@@ -127,28 +184,21 @@ function EvidenceCard({
   const [open, setOpen] = useState(!!isNew);
   const [f, setF] = useState<Draft>({ ...item });
   const [busy, setBusy] = useState(false);
-  const set = (k: keyof EvidenceItem, v: unknown) => setF((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof Draft, v: unknown) => setF((p) => ({ ...p, [k]: v }));
+  const type = f.type ?? 'document';
 
-  const kind = f.kind ?? 'document';
-  const uploadKind = kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'image';
-  const uploadSpec =
-    kind === 'video' ? getSpec('video.vhs_clip') : uploadKind === 'image' ? getSpec('evidence.document') : undefined;
-
-  function togglePrereq(code: string) {
-    const cur = new Set(f.unlocked_by ?? []);
-    if (cur.has(code)) cur.delete(code);
-    else cur.add(code);
-    set('unlocked_by', Array.from(cur));
-  }
+  const mediaField: 'image_path' | 'audio_path' | 'video_path' | null =
+    type === 'audio' ? 'audio_path' : type === 'video' ? 'video_path' : type === 'photo' || type === 'document' || type === 'record' || type === 'testimony' ? (type === 'testimony' ? 'audio_path' : 'image_path') : null;
+  const mediaKind = type === 'audio' || type === 'testimony' ? 'audio' : type === 'video' ? 'video' : 'image';
 
   return (
     <div className="entity">
       <div className="entity-head" onClick={() => !isNew && setOpen((o) => !o)}>
-        <span className={'pill-kind ' + kind}>{kind}</span>
+        <span className={'pill-kind ' + type}>{type}</span>
         <span className="entity-title">{f.code || (isNew ? 'Nueva evidencia' : '—')}</span>
         <span className="entity-meta">· {f.title}</span>
         <span className="entity-spacer" />
-        <span className="entity-meta">{f.scope === 'variant' ? 'variante' : 'compartida'}</span>
+        <span className="entity-meta">{f.initial ? 'inicial' : f.scope === 'variant' ? 'variante' : 'compartida'}</span>
       </div>
 
       {open && (
@@ -164,11 +214,8 @@ function EvidenceCard({
             </div>
             <div>
               <label className="label">Tipo</label>
-              <select className="input" value={kind} onChange={(e) => set('kind', e.target.value)}>
-                <option value="document">Documento</option>
-                <option value="audio">Audio</option>
-                <option value="video">Video</option>
-                <option value="hint">Pista</option>
+              <select className="input" value={type} onChange={(e) => set('type', e.target.value)}>
+                {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
@@ -184,75 +231,80 @@ function EvidenceCard({
                 <label className="label">Variante</label>
                 <select className="input" value={f.variant_id ?? ''} onChange={(e) => set('variant_id', e.target.value || null)}>
                   <option value="">Selecciona…</option>
-                  {variants.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      Variante {v.code} — {v.culprit}
-                    </option>
-                  ))}
+                  {variants.map((v) => <option key={v.id} value={v.id}>Variante {v.code} — {v.culprit}</option>)}
                 </select>
               </div>
             )}
 
-            <div>
-              <label className="label">Entregable desde el minuto</label>
-              <input className="input mono" type="number" value={f.deliverable_from_minute ?? 0} onChange={(e) => set('deliverable_from_minute', Number(e.target.value))} />
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <label className="toggle">
+                <input type="checkbox" checked={f.initial ?? false} onChange={(e) => set('initial', e.target.checked)} />
+                <span className="track" />
+                <span>Inicial (abierta desde el minuto 0)</span>
+              </label>
             </div>
-            <div>
-              <label className="label">Cómo se entrega</label>
-              <select className="input" value={f.delivery ?? 'on_request'} onChange={(e) => set('delivery', e.target.value)}>
-                <option value="on_request">A petición (on_request)</option>
-                <option value="chat_push">Empujada al chat (chat_push)</option>
-                <option value="code_only">Solo por código (code_only)</option>
-              </select>
+            {!f.initial && (
+              <div>
+                <label className="label">Se libera en el minuto</label>
+                <input className="input mono" type="number" value={f.unlocked_at_minute ?? ''} onChange={(e) => set('unlocked_at_minute', e.target.value ? Number(e.target.value) : null)} />
+              </div>
+            )}
+
+            <div className="full">
+              <label className="label">Descripción pública (la ve el jugador en el listado)</label>
+              <input className="input" placeholder="Fotografía tomada en la escena, 27/10/89 03:12. Sin conclusiones." value={f.public_description ?? ''} onChange={(e) => set('public_description', e.target.value)} />
             </div>
 
-            {(kind === 'document' || kind === 'hint') && (
+            {/* Contenido por tipo */}
+            {type === 'testimony' && (
+              <div className="full">
+                <label className="label">Testigo</label>
+                <input className="input" value={f.witness_name ?? ''} onChange={(e) => set('witness_name', e.target.value)} />
+              </div>
+            )}
+            {type === 'record' && (
+              <div className="full">
+                <label className="label">Tipo de registro</label>
+                <input className="input" placeholder="Bitácora de vigilancia, Registro telefónico…" value={f.record_type ?? ''} onChange={(e) => set('record_type', e.target.value)} />
+              </div>
+            )}
+            {(type === 'document' || type === 'testimony' || type === 'record') && (
               <div className="full">
                 <label className="label">Contenido (Markdown)</label>
                 <textarea className="input tall" value={f.body_md ?? ''} onChange={(e) => set('body_md', e.target.value)} />
               </div>
             )}
-            {(kind === 'audio' || kind === 'video') && (
+            {type === 'photo' && (
+              <div className="full">
+                <label className="label">Pie de foto</label>
+                <input className="input" value={f.caption ?? ''} onChange={(e) => set('caption', e.target.value)} />
+              </div>
+            )}
+            {(type === 'audio' || type === 'video') && (
               <div className="full">
                 <label className="label">Transcripción</label>
                 <textarea className="input" value={f.transcript ?? ''} onChange={(e) => set('transcript', e.target.value)} />
               </div>
             )}
 
-            <div className="full">
-              <MediaUploader
-                caseSlug={slug}
-                kind={uploadKind}
-                category="evidencia"
-                value={f.media_path ?? null}
-                onUploaded={(path) => set('media_path', path)}
-                label={kind === 'document' || kind === 'hint' ? 'Imagen (opcional)' : `Archivo de ${kind}`}
-                spec={uploadSpec}
-              />
-            </div>
-
-            {allCodes.length > 0 && (
+            {mediaField && (
               <div className="full">
-                <label className="label">Prerequisitos (deben desbloquearse antes)</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {allCodes.map((code) => (
-                    <label key={code} className="pill-kind" style={{ cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
-                      <input type="checkbox" checked={(f.unlocked_by ?? []).includes(code)} onChange={() => togglePrereq(code)} />
-                      {code}
-                    </label>
-                  ))}
-                </div>
+                <MediaUploader
+                  caseSlug={slug}
+                  kind={mediaKind}
+                  category="evidencia"
+                  value={(f[mediaField] as string | null) ?? null}
+                  onUploaded={(path) => set(mediaField, path)}
+                  label={mediaKind === 'audio' ? 'Archivo de audio' : mediaKind === 'video' ? 'Archivo de video' : 'Imagen (opcional)'}
+                />
               </div>
             )}
-          </div>
 
-          {/* Preview inline */}
-          {(f.body_md || f.transcript) && (
-            <div className="doc-preview" style={{ borderLeft: '2px solid var(--line)', paddingLeft: 12, color: 'var(--ink-2)', fontSize: 13 }}>
-              {f.body_md && <div>{f.body_md}</div>}
-              {f.transcript && <div style={{ fontStyle: 'italic', marginTop: 4 }}>“{f.transcript}”</div>}
+            <div className="full">
+              <label className="label">Notas internas (admin-only)</label>
+              <textarea className="input" placeholder="Notas del autor / red herrings. Jamás llegan al cliente ni al Comandante." value={f.admin_notes ?? ''} onChange={(e) => set('admin_notes', e.target.value)} />
             </div>
-          )}
+          </div>
 
           <div className="row-actions">
             <button

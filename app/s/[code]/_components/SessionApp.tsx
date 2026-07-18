@@ -149,7 +149,7 @@ export default function SessionApp({ code }: { code: string }) {
   if (!state) return <SessionSkeleton />;
 
   const cdClass = seconds > 60 * 60 ? 'green' : seconds >= 30 * 60 ? 'amber' : 'red';
-  const docs = state.evidence.filter((e) => e.kind === 'document' || e.kind === 'hint');
+  const docs = state.evidence.filter((e) => e.kind === 'document');
   const audios = state.evidence.filter((e) => e.kind === 'audio');
   const videos = state.evidence.filter((e) => e.kind === 'video');
   const hintsLeft = state.maxHints - state.hintsUsed;
@@ -317,7 +317,7 @@ export default function SessionApp({ code }: { code: string }) {
         ))}
       </div>
 
-      {verdictOpen && <VerdictModal suspects={state.suspects.map((s) => s.name)} onClose={() => setVerdictOpen(false)} onSubmit={submitVerdict} />}
+      {verdictOpen && <VerdictModal suspects={state.suspects.map((s) => s.full_name)} onClose={() => setVerdictOpen(false)} onSubmit={submitVerdict} />}
       {resolution && <ResolutionScreen r={resolution} />}
     </div>
   );

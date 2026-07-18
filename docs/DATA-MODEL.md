@@ -57,17 +57,29 @@ CMS ligero de imágenes del landing/marketing, editables desde `/admin/assets`.
 - RLS: **lectura pública** (imágenes de marketing, no sensibles); escritura solo por service role
 - La sección para el filtro admin se **deriva del slot** (no es columna)
 
-### suspects (Fase 1 · ampliado en it3 F3)
-Sospechosos compartidos por caso; en cada variante uno de ellos es el culpable.
-- `id` uuid pk, `case_id` fk
-- `name`, `age` int, `occupation`, `relation` (con la víctima), `description`, `alibi` (coartada)
-- `photo_path` text — ruta en el bucket `media`
-- `sort_order` int — orden en el expediente
-- **`physical_description` text (it3 F3)** — descripción física neutra
-- **`distinctive_features` text (it3 F3)** — rasgos-pista (deben verse en la imagen y ser
-  detectables por los jugadores en la ficha del sospechoso)
-- **`image_prompt` text (it3 F3)** — prompt de IA listo para pegar (autogenerable, editable)
-- `created_at`
+### suspects (Refactor F1: ficha 100% pública y neutra)
+Sospechosos compartidos por caso. La ficha es idéntica sin importar la variante sorteada.
+Campos **PÚBLICOS** (llegan al cliente):
+- `id` uuid pk, `case_id` fk, `sort_order` int
+- `full_name`, `age` int, `occupation`
+- `relationship_to_victim` — vínculo objetivo, sin cargas ("empleado de la empresa")
+- `physical_description` — descripción física neutra
+- `distinctive_features` — marcas observables (tatuajes, cicatrices, lentes); pueden ser pistas
+  pero no son secretas ni referencian variantes
+- `accent_or_speech`, `typical_attire` — acento/habla y vestimenta habitual (no la del crimen)
+- `photo_path`
+
+Campos **ADMIN-ONLY** (jamás salen al cliente):
+- `internal_notes` — notas del autor sobre el personaje
+- `image_prompt` (it3 F3) — prompt de IA
+
+### suspect_variant_data (Refactor F1 · ADMIN-ONLY)
+Comportamiento de cada sospechoso por variante. RLS sin políticas → solo service role.
+- `id` uuid pk, `suspect_id` fk, `variant_id` fk, UNIQUE(suspect_id, variant_id)
+- `alibi_declared` — coartada declarada en esa variante
+- `motive_apparent` — móvil aparente si aplica
+- `variant_specific_notes` — detalles de comportamiento ("esa noche vestía beige")
+- `is_culprit_in_variant` bool — **NUNCA se pasa al Comandante**
 
 ### case_visual_prompts (it3 F3)
 Prompts de assets adicionales del caso (escena del crimen, videos VHS, evidencias visuales).
@@ -93,13 +105,29 @@ Prompts de assets adicionales del caso (escena del crimen, videos VHS, evidencia
 - `commander_context` text
 - `rubric` jsonb
 
-### evidence_items
-- `id` uuid pk, `code` text unique, `kind` (audio|video|document|hint)
-- `scope` (shared|variant), `variant_id` nullable, `case_id` nullable
-- `title`, `body_md`, `media_path`, `transcript`
-- `unlocked_by` text[] (prerequisitos)
-- `deliverable_from_minute` int DEFAULT 0
-- `delivery` (chat_push|on_request|code_only)
+### evidence_items (Refactor F1: base + contenido tipado)
+Tabla **base** (metadata común). El contenido vive en tablas por tipo.
+- `id` uuid pk, `code` text unique, `case_id` fk
+- `type` enum (`document|photo|audio|video|testimony|record`)
+- `scope` (shared|variant), `variant_id` nullable
+- `title`, `public_description` text — **lo único que ve el jugador en el listado** (neutro,
+  sin conclusiones)
+- `admin_notes` text — notas del autor / red herrings (**nunca al cliente ni al Comandante**)
+- `initial` bool — ¿abierta desde el minuto 0?
+- `unlocked_at_minute` int nullable — si no es inicial, minuto en que se libera
+- `unlocked_by_event_id` uuid nullable → `case_timeline` — o se libera por evento del Comandante
+
+Tablas de **contenido** (una por tipo, `evidence_id` pk/fk único, cascade):
+- `evidence_document`: `body_md`, `image_path`, `transcript`
+- `evidence_photo`: `image_path`, `caption`, `metadata` jsonb
+- `evidence_audio`: `audio_path`, `duration_seconds`, `transcript`, `speakers` jsonb
+- `evidence_video`: `video_path`, `duration_seconds`, `transcript`, `timestamps` jsonb, `frames_path`
+- `evidence_testimony`: `witness_name`, `body_md`, `audio_path`
+- `evidence_record`: `record_type`, `body_md`, `image_path`, `structured_data` jsonb
+
+Disponibilidad (motor `lib/engine/evidence-gating.ts`): abierta si es visible a la variante Y
+(`initial` ∨ transcurrió `unlocked_at_minute` ∨ su evento se disparó ∨ desbloqueo manual por código).
+El detalle se sirve solo cuando la pieza está abierta (`GET .../evidence/[code]`).
 
 ### case_timeline
 - `id` uuid pk, `case_id` fk, `minute` int
@@ -172,7 +200,7 @@ Prompts de assets adicionales del caso (escena del crimen, videos VHS, evidencia
 
 ## Reglas de integridad clave
 1. Al activar: `variant_id = random(SELECT id FROM variants WHERE case_id = X AND active)`
-2. `enviar_evidencia(code)` valida contra BD (variante ∈ {shared, sorteada} + minuto + prereqs)
+2. `enviar_evidencia(code)` valida contra BD (visible a la variante + abierta por initial/minuto/evento)
 3. Eventos temporales: UNIQUE previene doble ejecución
 4. `chat_messages.role='commander'` con `kind='evidence_card'` implica `session_events` con `type='unlock'`
 5. Trigger o job diario: `access_codes` con `effective_expires_at < now()` → status `expired`
@@ -184,7 +212,8 @@ Habilitada en todas las tablas de usuario. Políticas base:
 - `sessions`, `chat_messages`, `session_events`, `verdicts`: usuario ve solo las de sus sesiones;
   admin ve todas
 - `cases`, `variants` (metadatos): lectura pública para `active=true`; escritura solo admin
-- `evidence_items`: lectura solo desde API server-side (nunca directo desde cliente)
+- `evidence_items` + tablas de contenido por tipo: lectura solo server-side (nunca directo)
+- `suspect_variant_data`: RLS habilitada **sin políticas** → solo service role; nunca al cliente
 - `admin_actions`: solo admin escribe/lee
 
 ## Migrations (`supabase/migrations/`) — estado real del repo
@@ -194,3 +223,15 @@ Orden aplicado:
 - `0003_auth_trigger_rls` — trigger `handle_new_user`, `is_admin()`, políticas RLS
 - `0004_suspects_and_case_admin` (**Fase 1**) — tabla `suspects`, `variants.culprit_suspect_id`,
   `cases.price_ref_mxn`, `cases.validation_matrix`, bucket de Storage `media`
+- `0005_cases_marketing`, `0006_session_player_notes`, `0007_site_assets`, `0008_art_direction`
+- `0009_typed_evidence_and_clean_suspects` (**Refactor F1**) — separa la ficha de `suspects`
+  (renombra `name→full_name`, `relation→relationship_to_victim`; agrega `accent_or_speech`,
+  `typical_attire`, `internal_notes`; mueve `description→internal_notes` y `alibi→suspect_variant_data`);
+  crea `suspect_variant_data`; convierte `evidence_items` a base + 6 tablas por tipo
+  (`evidence_document/photo/audio/video/testimony/record`) con `type`, `initial`,
+  `unlocked_at_minute`, `unlocked_by_event_id`, `public_description`, `admin_notes`.
+  Rollback: `0009_rollback.sql`. Remap de contenido del Caso 001: `seeds/0009_caso001_refactor.sql`.
+
+> El enum viejo `evidence_kind` (audio|video|document|hint) y `evidence_delivery` quedan sin uso
+> (no se eliminan para no romper el rollback). `cases.validation_matrix` sigue presente; la tab
+> "Matriz" se simplifica en una fase posterior.

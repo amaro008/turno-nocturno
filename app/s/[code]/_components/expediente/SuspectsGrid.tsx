@@ -37,15 +37,15 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
             <div className={'suspect-card' + (isOut ? ' discarded' : '')} key={s.id}>
               <button className="suspect-open" onClick={() => setOpen(s)}>
                 <div className="suspect-photo">
-                  {s.photoUrl ? <img src={s.photoUrl} alt={s.name} draggable={false} /> : <InitialsAvatar name={s.name} />}
+                  {s.photoUrl ? <img src={s.photoUrl} alt={s.full_name} draggable={false} /> : <InitialsAvatar name={s.full_name} />}
                   {isOut && <span className="discard-stamp">DESCARTADO</span>}
                 </div>
                 <div className="suspect-body">
-                  <h3>{s.name}</h3>
+                  <h3>{s.full_name}</h3>
                   <div className="suspect-sub">
                     {s.age ? `${s.age} años` : ''}{s.age && s.occupation ? ' · ' : ''}{s.occupation ?? ''}
                   </div>
-                  {s.relation && <div className="suspect-rel">{s.relation}</div>}
+                  {s.relationship_to_victim && <div className="suspect-rel">{s.relationship_to_victim}</div>}
                 </div>
               </button>
               <button className="suspect-discard" onClick={() => toggleDiscard(s.id)}>
@@ -61,23 +61,17 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
           <div className="modal suspect-modal" onClick={(e) => e.stopPropagation()}>
             <div className="suspect-modal-top">
               <div className="suspect-modal-photo">
-                {open.photoUrl ? <img src={open.photoUrl} alt={open.name} draggable={false} /> : <InitialsAvatar name={open.name} />}
+                {open.photoUrl ? <img src={open.photoUrl} alt={open.full_name} draggable={false} /> : <InitialsAvatar name={open.full_name} />}
               </div>
               <div>
-                <h2 style={{ margin: 0 }}>{open.name}</h2>
+                <h2 style={{ margin: 0 }}>{open.full_name}</h2>
                 <div className="suspect-sub" style={{ marginTop: 4 }}>
                   {open.age ? `${open.age} años` : ''}{open.age && open.occupation ? ' · ' : ''}{open.occupation ?? ''}
                 </div>
-                {open.relation && <div className="suspect-rel" style={{ marginTop: 6 }}>{open.relation}</div>}
+                {open.relationship_to_victim && <div className="suspect-rel" style={{ marginTop: 6 }}>{open.relationship_to_victim}</div>}
               </div>
             </div>
 
-            {open.description && (
-              <div className="suspect-field">
-                <span className="sf-label">Descripción</span>
-                <p>{open.description}</p>
-              </div>
-            )}
             {open.physical_description && (
               <div className="suspect-field">
                 <span className="sf-label">Descripción física</span>
@@ -96,10 +90,16 @@ export default function SuspectsGrid({ suspects }: { suspects: SessionSuspect[] 
                 <span className="rasgos-hint">Estos rasgos pueden ser pistas. Revísalos con atención.</span>
               </div>
             )}
-            {open.alibi && (
+            {open.typical_attire && (
               <div className="suspect-field">
-                <span className="sf-label">Coartada declarada</span>
-                <p>{open.alibi}</p>
+                <span className="sf-label">Vestimenta habitual</span>
+                <p>{open.typical_attire}</p>
+              </div>
+            )}
+            {open.accent_or_speech && (
+              <div className="suspect-field">
+                <span className="sf-label">Acento / habla</span>
+                <p>{open.accent_or_speech}</p>
               </div>
             )}
             <div className="suspect-field">

@@ -43,20 +43,33 @@ export type CaseMarketingInput = z.infer<typeof caseMarketingSchema>;
 
 export const suspectSchema = z.object({
   id: z.string().uuid().optional(),
-  name: z.string().min(1, 'Falta el nombre').max(120),
+  full_name: z.string().min(1, 'Falta el nombre').max(120),
   age: z.coerce.number().int().min(1).max(120).nullable().optional(),
   occupation: z.string().max(120).nullable().optional(),
-  relation: z.string().max(200).nullable().optional(),
-  description: z.string().max(1000).nullable().optional(),
-  alibi: z.string().max(1000).nullable().optional(),
+  relationship_to_victim: z.string().max(200).nullable().optional(),
   photo_path: z.string().nullable().optional(),
   sort_order: z.coerce.number().int().default(0),
-  // Dirección de arte (Fase 3)
+  // Ficha pública neutra
   physical_description: z.string().max(2000).nullable().optional(),
   distinctive_features: z.string().max(2000).nullable().optional(),
+  accent_or_speech: z.string().max(500).nullable().optional(),
+  typical_attire: z.string().max(500).nullable().optional(),
+  // Admin-only
+  internal_notes: z.string().max(4000).nullable().optional(),
   image_prompt: z.string().max(4000).nullable().optional(),
 });
 export type SuspectInput = z.infer<typeof suspectSchema>;
+
+// Data por variante de un sospechoso (admin-only)
+export const suspectVariantDataSchema = z.object({
+  suspect_id: z.string().uuid(),
+  variant_id: z.string().uuid(),
+  alibi_declared: z.string().max(2000).nullable().optional(),
+  motive_apparent: z.string().max(2000).nullable().optional(),
+  variant_specific_notes: z.string().max(4000).nullable().optional(),
+  is_culprit_in_variant: z.boolean().default(false),
+});
+export type SuspectVariantDataInput = z.infer<typeof suspectVariantDataSchema>;
 
 // ---- Dirección de arte del caso ----
 export const artDirectionSchema = z.object({
@@ -86,9 +99,28 @@ export const visualPromptSchema = z.object({
 });
 export type VisualPromptInput = z.infer<typeof visualPromptSchema>;
 
-export const evidenceKind = z.enum(['audio', 'video', 'document', 'hint']);
+export const evidenceType = z.enum(['document', 'photo', 'audio', 'video', 'testimony', 'record']);
 export const evidenceScope = z.enum(['shared', 'variant']);
-export const evidenceDelivery = z.enum(['chat_push', 'on_request', 'code_only']);
+
+/** Contenido por tipo (flexible; el route toma solo lo que aplica al tipo). */
+export const evidenceContentSchema = z
+  .object({
+    body_md: z.string().nullable().optional(),
+    transcript: z.string().nullable().optional(),
+    image_path: z.string().nullable().optional(),
+    audio_path: z.string().nullable().optional(),
+    video_path: z.string().nullable().optional(),
+    caption: z.string().nullable().optional(),
+    witness_name: z.string().max(160).nullable().optional(),
+    record_type: z.string().max(160).nullable().optional(),
+    duration_seconds: z.coerce.number().int().min(0).nullable().optional(),
+    frames_path: z.string().nullable().optional(),
+    metadata: z.record(z.any()).optional(),
+    speakers: z.array(z.any()).optional(),
+    timestamps: z.array(z.any()).optional(),
+    structured_data: z.record(z.any()).optional(),
+  })
+  .default({});
 
 export const evidenceSchema = z.object({
   id: z.string().uuid().optional(),
@@ -97,16 +129,16 @@ export const evidenceSchema = z.object({
     .min(2, 'Código muy corto')
     .max(40)
     .regex(/^[A-Z0-9-]+$/, 'Mayúsculas, números y guiones (ej. CINTA-0158)'),
-  kind: evidenceKind,
+  type: evidenceType,
   scope: evidenceScope,
   variant_id: z.string().uuid().nullable().optional(),
   title: z.string().min(1, 'Falta el título').max(160),
-  body_md: z.string().nullable().optional(),
-  media_path: z.string().nullable().optional(),
-  transcript: z.string().nullable().optional(),
-  unlocked_by: z.array(z.string()).default([]),
-  deliverable_from_minute: z.coerce.number().int().min(0).max(360).default(0),
-  delivery: evidenceDelivery.default('on_request'),
+  public_description: z.string().max(600).default(''),
+  admin_notes: z.string().max(4000).default(''),
+  initial: z.boolean().default(false),
+  unlocked_at_minute: z.coerce.number().int().min(0).max(360).nullable().optional(),
+  unlocked_by_event_id: z.string().uuid().nullable().optional(),
+  content: evidenceContentSchema,
 });
 export type EvidenceInput = z.infer<typeof evidenceSchema>;
 

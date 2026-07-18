@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Case, Suspect, EvidenceItem, Variant, TimelineEvent } from '@/lib/domain';
+import type { Case, SuspectFull, EvidenceFull, Variant, TimelineEvent } from '@/lib/domain';
 import CaseGeneralForm from './CaseGeneralForm';
 import SuspectsTab from './SuspectsTab';
 import EvidenceTab from './EvidenceTab';
@@ -21,14 +21,14 @@ export default function CaseEditor({
   initialTimeline,
 }: {
   caseRow: Case;
-  initialSuspects: Suspect[];
-  initialEvidence: EvidenceItem[];
+  initialSuspects: SuspectFull[];
+  initialEvidence: EvidenceFull[];
   initialVariants: Variant[];
   initialTimeline: TimelineEvent[];
 }) {
   const [tab, setTab] = useState<TabId>('general');
-  const [suspects, setSuspects] = useState<Suspect[]>(initialSuspects);
-  const [evidence, setEvidence] = useState<EvidenceItem[]>(initialEvidence);
+  const [suspects, setSuspects] = useState<SuspectFull[]>(initialSuspects);
+  const [evidence, setEvidence] = useState<EvidenceFull[]>(initialEvidence);
   const [variants, setVariants] = useState<Variant[]>(initialVariants);
   const [timeline, setTimeline] = useState<TimelineEvent[]>(initialTimeline);
 

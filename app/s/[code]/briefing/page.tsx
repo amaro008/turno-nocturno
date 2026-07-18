@@ -35,7 +35,7 @@ export default async function BriefingPage({ params }: { params: { code: string 
 
   const { data: suspects } = await svc
     .from('suspects')
-    .select('id, name, occupation, description, photo_path')
+    .select('id, full_name, occupation, physical_description, photo_path')
     .eq('case_id', ac.case_id)
     .order('sort_order', { ascending: true });
 
@@ -79,12 +79,12 @@ export default async function BriefingPage({ params }: { params: { code: string 
               {suspectPhotos.map((s) => (
                 <div className="susp-card" key={s.id}>
                   <div className="susp-photo">
-                    {s.url ? <img src={s.url} alt={s.name} /> : <InitialsAvatar name={s.name} />}
+                    {s.url ? <img src={s.url} alt={s.full_name} /> : <InitialsAvatar name={s.full_name} />}
                   </div>
                   <div className="susp-info">
-                    <h3>{s.name}</h3>
+                    <h3>{s.full_name}</h3>
                     {s.occupation && <div className="susp-role">{s.occupation}</div>}
-                    {s.description && <p>{s.description}</p>}
+                    {s.physical_description && <p>{s.physical_description}</p>}
                   </div>
                 </div>
               ))}
