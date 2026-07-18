@@ -67,8 +67,7 @@ export default function PersonajesTab({
           <div className={'char-card' + (s.is_victim ? ' victim' : '')} key={s.id}>
             <button className="char-open" onClick={() => openEdit(s)}>
               <div className="char-photo">
-                {/* La foto en admin usa el path directo del bucket vía el uploader; aquí iniciales */}
-                <InitialsAvatar name={s.full_name} />
+                {s.photoUrl ? <img src={s.photoUrl} alt={s.full_name} /> : <InitialsAvatar name={s.full_name} />}
                 {s.is_victim && <span className="char-badge">VÍCTIMA</span>}
               </div>
               <div className="char-body">

@@ -45,6 +45,8 @@ export interface SuspectVariantData {
 /** Personaje completo con su data por variante embebida (admin). */
 export interface SuspectWithVariants extends SuspectFull {
   variant_data: SuspectVariantData[];
+  /** URL firmada de la foto para previsualizar en el admin (opcional). */
+  photoUrl?: string | null;
 }
 
 /** Columnas seguras para SELECT de la ficha pública (sin internal_notes ni arte). */

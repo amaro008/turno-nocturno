@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/server/supabase';
 import { loadCaseEvidenceBase, assembleEvidence } from '@/lib/server/evidence';
+import { signedUrl } from '@/lib/server/storage';
 import CaseEditor from '../../_components/CaseEditor';
 import type { Case, SuspectWithVariants, EvidenceFull, Variant, TimelineEvent } from '@/lib/domain';
 
@@ -30,7 +31,13 @@ export default async function EditarCasoPage({ params }: { params: { slug: strin
     arr.push(r);
     vdBySuspect.set(r.suspect_id, arr);
   }
-  const suspects = (suspectRows ?? []).map((s) => ({ ...s, variant_data: vdBySuspect.get(s.id) ?? [] }));
+  const suspects = await Promise.all(
+    (suspectRows ?? []).map(async (s) => ({
+      ...s,
+      variant_data: vdBySuspect.get(s.id) ?? [],
+      photoUrl: await signedUrl(s.photo_path),
+    })),
+  );
 
   return (
     <>

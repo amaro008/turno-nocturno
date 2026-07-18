@@ -5,6 +5,7 @@ import { assertAdminApi } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
 import { getCaseBySlug } from '@/lib/server/admin-cases';
 import { logAdminAction } from '@/lib/server/admin-audit';
+import { signedUrl } from '@/lib/server/storage';
 import { suspectSchema } from '@/lib/domain/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,13 @@ async function listSuspects(svc: ReturnType<typeof createServiceClient>, caseId:
     arr.push(r);
     byS.set(r.suspect_id, arr);
   }
-  return (suspects ?? []).map((s) => ({ ...s, variant_data: byS.get(s.id) ?? [] }));
+  return Promise.all(
+    (suspects ?? []).map(async (s) => ({
+      ...s,
+      variant_data: byS.get(s.id) ?? [],
+      photoUrl: await signedUrl(s.photo_path),
+    })),
+  );
 }
 
 /** Upsert de la data por variante + sincroniza el culpable en `variants`. */
