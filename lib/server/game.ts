@@ -127,7 +127,7 @@ export async function getCommanderData(
     ),
   );
 
-  const suspects: CommanderSuspect[] = ((suspectRows ?? []) as SuspectPublic[]).map((s) => {
+  const suspects: CommanderSuspect[] = ((suspectRows ?? []) as SuspectPublic[]).filter((s) => !s.is_victim).map((s) => {
     const vd = vdBySuspect.get(s.id);
     return {
       full_name: s.full_name,

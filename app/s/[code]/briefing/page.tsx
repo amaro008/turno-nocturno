@@ -37,6 +37,7 @@ export default async function BriefingPage({ params }: { params: { code: string 
     .from('suspects')
     .select('id, full_name, occupation, physical_description, photo_path')
     .eq('case_id', ac.case_id)
+    .eq('is_victim', false)
     .order('sort_order', { ascending: true });
 
   const atmoPrimary =

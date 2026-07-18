@@ -54,22 +54,24 @@ export const suspectSchema = z.object({
   distinctive_features: z.string().max(2000).nullable().optional(),
   accent_or_speech: z.string().max(500).nullable().optional(),
   typical_attire: z.string().max(500).nullable().optional(),
+  is_victim: z.boolean().default(false),
   // Admin-only
   internal_notes: z.string().max(4000).nullable().optional(),
   image_prompt: z.string().max(4000).nullable().optional(),
+  // Data por variante (se upserta junto con el sospechoso)
+  variant_data: z
+    .array(
+      z.object({
+        variant_id: z.string().uuid(),
+        alibi_declared: z.string().max(2000).nullable().optional(),
+        motive_apparent: z.string().max(2000).nullable().optional(),
+        variant_specific_notes: z.string().max(4000).nullable().optional(),
+        is_culprit_in_variant: z.boolean().default(false),
+      }),
+    )
+    .optional(),
 });
 export type SuspectInput = z.infer<typeof suspectSchema>;
-
-// Data por variante de un sospechoso (admin-only)
-export const suspectVariantDataSchema = z.object({
-  suspect_id: z.string().uuid(),
-  variant_id: z.string().uuid(),
-  alibi_declared: z.string().max(2000).nullable().optional(),
-  motive_apparent: z.string().max(2000).nullable().optional(),
-  variant_specific_notes: z.string().max(4000).nullable().optional(),
-  is_culprit_in_variant: z.boolean().default(false),
-});
-export type SuspectVariantDataInput = z.infer<typeof suspectVariantDataSchema>;
 
 // ---- Dirección de arte del caso ----
 export const artDirectionSchema = z.object({

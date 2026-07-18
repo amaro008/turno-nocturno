@@ -83,14 +83,19 @@ turno-nocturno/
 │   │   │   ├── nuevo/page.tsx    # Alta (tab General) → redirige a editar
 │   │   │   ├── [slug]/editar/page.tsx        # Carga caso + sub-entidades → CaseEditor
 │   │   │   ├── [slug]/estadisticas/page.tsx  # Métricas del caso
-│   │   │   └── _components/
-│   │   │       ├── CaseEditor.tsx            # Contenedor de los 6 tabs
-│   │   │       ├── CaseGeneralForm.tsx       # Tab General (react-hook-form + Zod)
-│   │   │       ├── SuspectsTab.tsx           # Sospechosos (reordenables)
-│   │   │       ├── EvidenceTab.tsx           # Evidencias (filtros, prereqs, preview)
+│   │   │   └── _components/                  # Refactor F2 — editor de 4 tabs
+│   │   │       ├── CaseEditor.tsx            # Contenedor de los 4 tabs
+│   │   │       ├── GeneralTab.tsx            # General: metadatos+marketing+arte+banner
+│   │   │       ├── CaseGeneralForm.tsx       # Metadatos (react-hook-form + Zod)
+│   │   │       ├── MarketingTab.tsx          # Sinopsis pública, cover, hero, dificultad
+│   │   │       ├── ArtDirectionTab.tsx       # Dirección de arte (prompts de IA, plegable)
+│   │   │       ├── StatusBanner.tsx          # Banner de estado + bloqueos/advertencias
+│   │   │       ├── PersonajesTab.tsx         # Grid + Sheet (público/confidencial/variante)
+│   │   │       ├── EvidenciasTab.tsx         # Manager por tipo (sub-tabs) + validador
+│   │   │       ├── GuionTab.tsx              # Variantes + Timeline + vista consolidada
 │   │   │       ├── VariantsTab.tsx           # Variantes (culpable validado + rúbrica)
 │   │   │       ├── TimelineTab.tsx           # Timeline + preview de línea de tiempo
-│   │   │       ├── MatrixTab.tsx             # Matriz de validación documental
+│   │   │       ├── Sheet.tsx                 # Panel lateral (CSS propio, estilo shadcn)
 │   │   │       ├── MediaUploader.tsx         # Uploader drag-and-drop → Storage firmado
 │   │   │       └── entityApi.ts              # Helper de cliente para CRUD de sub-entidades
 │   │   ├── codigos/

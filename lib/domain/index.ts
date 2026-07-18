@@ -78,6 +78,7 @@ export type {
   SuspectPublic,
   SuspectFull,
   SuspectVariantData,
+  SuspectWithVariants,
 } from './suspect';
 export { SUSPECT_PUBLIC_COLUMNS, toSuspectPublic } from './suspect';
 

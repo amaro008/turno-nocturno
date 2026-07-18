@@ -69,23 +69,37 @@ autoría por archivos para la creación y edición de casos desde el navegador.
 **Alta (`/admin/casos/nuevo`):** formulario General (react-hook-form + Zod). Al crear,
 redirige al editor multi-tab.
 
-**Editor (`/admin/casos/[slug]/editar`):** seis tabs. Cada sub-entidad persiste por su
-propia API (`POST .../{entidad}` con `{ op, data }`) y refresca la lista al vuelo:
-- **General:** título, slug (auto del título, editable), sinopsis, ciudad, año,
-  `era_profile` (select vhs-80s / cassette-90s / cctv-2000s / smartphone-2010s / default),
-  duración, precio de referencia MXN, toggle `active`, y **uploader de voz de briefing**.
-- **Sospechosos:** lista editable (nombre, edad, ocupación, relación, descripción, coartada,
-  foto). Reordenable (▲▼). Compartidos entre variantes.
-- **Evidencias:** código, título, tipo, scope (compartida/variante), minuto entregable,
-  forma de entrega, prerequisitos (multi-select), uploader por tipo (doc→imagen opcional,
-  audio→mp3, video→mp4), preview inline. Filtros por scope y tipo.
-- **Variantes (máx 3):** código A/B/C, culpable (**select de sospechosos, validado en servidor**),
-  toggle activo, narrativa + audio de resolución, contexto del Comandante (sin revelar culpable),
-  rúbrica (cómo/por qué + palabras clave).
-- **Timeline del Comandante:** eventos por minuto (mensaje/voz/evidencia/presión/deadline) con
-  payload según tipo y scope de variante. **Preview visual** tipo línea de tiempo.
-- **Matriz de validación:** tabla auto-generada (evidencias × variantes) con checkbox
-  "consistente" + nota por celda. Documental: avisa si hay evidencias sin validar, no bloquea.
+**Editor (`/admin/casos/[slug]/editar`) — Refactor F2: cuatro tabs.** Cada sub-entidad
+persiste por su propia API (`POST .../{entidad}` con `{ op, data }`) y refresca al vuelo:
+
+- **General:** metadatos (título, slug, sinopsis, ciudad, año, `era_profile`, duración, precio,
+  toggle `active`, voz de briefing) + Marketing (sinopsis pública, cover, hero, dificultad,
+  jugadores) + Dirección de arte (plegable) + **banner de estado** (ver abajo).
+- **Personajes:** grid visual de tarjetas; al abrir una se despliega un **Sheet** (panel lateral)
+  con dos secciones separadas:
+  - **Ficha pública** (fondo claro): edad, ocupación, vínculo con la víctima, descripción física,
+    rasgos distintivos, acento, vestimenta habitual, foto. Toggle **Es la víctima**.
+  - **Confidencial · solo admin** (fondo rojo tinta): notas internas + un bloque **por variante**
+    con coartada declarada, móvil aparente, notas específicas y toggle **Es culpable en esta
+    variante** (sincroniza `variants.culprit_suspect_id`). Reordenamiento ▲▼, "Agregar personaje".
+- **Evidencias:** **manager por tipo** con sub-tabs `Documentos | Fotos | Audios | Videos |
+  Testimonios | Registros`. Fotos como galería, el resto como lista con descripción. Editor en
+  Sheet: código autogenerado `[TIPO]-NNNN`, título, scope, toggle **Inicial**, liberación por
+  minuto o por evento, **descripción pública con validador heurístico** (avisa si hay juicios),
+  campos según el tipo, uploader (respeta `image-specs`) y notas admin privadas.
+- **Guion:** sub-tabs **Variantes** (culpable, narrativa, audio, contexto del Comandante, rúbrica),
+  **Timeline** (eventos por minuto) y **Vista consolidada** (línea de tiempo horizontal con los
+  eventos ordenados por minuto, coloreados por tipo).
+
+**Banner de estado (en General)** — `lib/domain/case-validation.ts`:
+- Estado (BORRADOR/ACTIVO) + conteos (evidencias / iniciales / con liberación; sospechosos;
+  variantes activas + culpables asignados; eventos de timeline).
+- **Bloqueos de publicación** (`active=true`): falta cover o hero; variantes activas sin culpable;
+  evidencias sin `public_description`; sin eventos de timeline.
+- **Advertencias** (no bloquean): descripciones públicas con nombre de sospechoso + término de
+  juicio ("culpable", "asesino", "mató"…).
+
+> La antigua **Matriz de validación** se eliminó como tab; su rol lo cubre el banner de estado.
 
 **Estadísticas (`/admin/casos/[slug]/estadisticas`):** sesiones jugadas, aciertos de culpable,
 puntaje promedio y veces sorteada por variante.

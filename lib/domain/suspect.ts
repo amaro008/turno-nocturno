@@ -21,6 +21,7 @@ export interface SuspectPublic {
   accent_or_speech: string | null;
   typical_attire: string | null;
   photo_path: string | null;
+  is_victim: boolean;
 }
 
 /** Ficha completa (admin). Nunca se serializa al cliente. */
@@ -41,9 +42,14 @@ export interface SuspectVariantData {
   is_culprit_in_variant: boolean;
 }
 
+/** Personaje completo con su data por variante embebida (admin). */
+export interface SuspectWithVariants extends SuspectFull {
+  variant_data: SuspectVariantData[];
+}
+
 /** Columnas seguras para SELECT de la ficha pública (sin internal_notes ni arte). */
 export const SUSPECT_PUBLIC_COLUMNS =
-  'id, case_id, sort_order, full_name, age, occupation, relationship_to_victim, physical_description, distinctive_features, accent_or_speech, typical_attire, photo_path';
+  'id, case_id, sort_order, full_name, age, occupation, relationship_to_victim, physical_description, distinctive_features, accent_or_speech, typical_attire, photo_path, is_victim';
 
 /** Proyecta una fila completa a su versión pública (defensa en profundidad). */
 export function toSuspectPublic(s: SuspectFull): SuspectPublic {
@@ -60,5 +66,6 @@ export function toSuspectPublic(s: SuspectFull): SuspectPublic {
     accent_or_speech: s.accent_or_speech,
     typical_attire: s.typical_attire,
     photo_path: s.photo_path,
+    is_victim: s.is_victim,
   };
 }

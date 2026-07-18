@@ -49,8 +49,9 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
   }));
 
   // Ficha PÚBLICA de sospechosos (con foto firmada). Neutra, igual en toda variante.
+  // La víctima no aparece como sospechoso acusable.
   const suspects = await Promise.all(
-    ((suspectRows ?? []) as SuspectPublic[]).map(async (s) => ({
+    ((suspectRows ?? []) as SuspectPublic[]).filter((s) => !s.is_victim).map(async (s) => ({
       id: s.id,
       full_name: s.full_name,
       age: s.age,
