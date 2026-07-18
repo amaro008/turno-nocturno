@@ -21,6 +21,7 @@ export interface EvidenceBase {
   unlocked_by_event_id: string | null;
   public_description: string;
   admin_notes: string;
+  is_report: boolean;
 }
 
 export interface DocumentContent { body_md: string | null; image_path: string | null; transcript: string | null; }

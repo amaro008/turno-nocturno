@@ -84,31 +84,43 @@ misión clara (reemplaza al briefing anterior; `/s/[code]/briefing` redirige a `
 > la API mandan directo al portal de juego sin recrear nada. La víctima (`is_victim`) no aparece
 > en el conteo de sospechosos.
 
-## Flujo 4 — Sesión de juego · consola de detective (Fase 4)
-La consola es una **mesa de detective**, no solo un chat. Layout de 3 zonas:
+## Flujo 4 — Sesión de juego · consola rebalanceada (Refactor F4)
+La consola pone el **Expediente como protagonista** (65%) y al **Comandante como columna
+secundaria** (35%). Layout:
 - **Barra superior:** caso + ciudad/época; **cronómetro grande H:MM:SS** con color por umbral
-  (verde >60 min, ámbar 30–60, rojo pulsando <30); botón "Cerrar el caso".
-- **Zona central:** chat del Comandante (40%) + Expediente por 6 tabs (60%):
-  Sospechosos (fichas con modal + "descartar" local), Documentos (visor markdown protegido),
-  Audios (player con ±10 s y transcripción), Videos (player restringido), Mis notas
-  (auto-guardado cada 5 s en `sessions.player_notes`), Códigos (desbloqueo + historial).
-- **Barra inferior:** contador de pistas, "Pedir pista" y "Cerrar el caso".
-Cuando llega evidencia nueva: **badge rojo** en el tab + **toast** "Nueva evidencia: …".
+  (verde >60 min, ámbar 30–60, rojo <30); botón "Cerrar el caso".
+- **Expediente (65%, primario)** — tabs por tipo, con contador de items disponibles:
+  - **Reporte inicial** (abierto por default): el parte informativo (`evidence_items` con
+    `is_report=true`, `type=document`, `initial=true`). Es lo primero que ven.
+  - **Sospechosos**: grid de fichas con foto grande; modal con la ficha PÚBLICA (nunca variante);
+    "Descartar" local (solo UI). La víctima no aparece.
+  - **Documentos / Fotos / Audios / Videos / Testimonios / Registros**: cada tab con su visor
+    (`DocumentViewer` markdown, `PhotoGallery` con lightbox, `AudioPlayer`, `VideoPlayer`,
+    `TestimonyViewer` formato entrevista, registros en `DocumentViewer`). En cada tab, además de
+    lo abierto, se muestran **placeholders bloqueados** ("Disponible más tarde…" + minuto estimado)
+    sin spoilear qué son.
+  - **Notas** (auto-guardado en `sessions.player_notes`) y **Códigos** (desbloqueo por código).
+- **Comandante (35%, secundario)**: header con nombre y rol ("Comandante Vega — Fiscalía"), ayuda
+  contextual ("pregúntame dudas… NO puedo entregarte pruebas que aún no aparecen"), historial
+  compacto, input ("Escribe tu duda… (Enter para enviar)"), botón **"Pedir pista"** visible +
+  contador **pistas N/3**, y toggle de **mute** del chime.
+- **Barra inferior:** pips de pistas + "Cerrar el caso".
+
+**Evidencia nueva** (liberada por evento temporal): **badge** en el tab + **toast** "Nueva
+evidencia recibida: …" (click salta al tab) + **chime** discreto (con mute) + un mensaje breve
+del Comandante en su chat ("peritajes entregó más material. Está en su expediente.").
+
 Protección anti-descarga: URLs firmadas TTL 10 min, anti-selección/menú contextual, marca de
 agua con código de sesión, `controlsList`/`disablePictureInPicture`, `referrer:no-referrer`.
 
 ### Bucle principal
-1. Jugadores leen evidencia desde chat o Expediente
-2. Interrogan al Comandante escribiendo (Enter envía) → streaming SSE
-3. Piden evidencia → si gating permite, llega como tarjeta (y aparece en su tab del Expediente)
-4. Códigos impresos/descubiertos también desbloquean evidencia (input en Expediente)
-5. **Eventos temporales del Caso 001:**
-   - min 45: peritaje nuevo (según variante)
-   - min 75: nota de voz pidiendo avances
-   - min 105: presión del MP + micro-pista si van perdidos
-   - min 135: ultimátum
-   - min 150: exige veredicto
-6. Pistas por chat (máx 3), restan puntuación
+1. Al entrar, leen el **Reporte inicial** y el material base (todo lo `initial` está abierto).
+2. Investigan el Expediente por tipo; descartan sospechosos localmente; toman notas.
+3. Consultan al Comandante **dudas específicas** sobre lo que ya tienen. **Ya no entrega evidencia
+   bajo demanda**: si se la piden, responde en personaje y redirige.
+4. Cada ~20–30 min un evento temporal libera evidencia nueva (aparece en su tab) o mete presión.
+5. Códigos impresos/descubiertos también desbloquean evidencia (input en Expediente).
+6. Pistas (máx 3), restan puntuación.
 
 ## Flujo 5 — Veredicto
 1. Botón "Cerrar el caso" siempre visible

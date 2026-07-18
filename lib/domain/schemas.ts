@@ -140,6 +140,7 @@ export const evidenceSchema = z.object({
   initial: z.boolean().default(false),
   unlocked_at_minute: z.coerce.number().int().min(0).max(360).nullable().optional(),
   unlocked_by_event_id: z.string().uuid().nullable().optional(),
+  is_report: z.boolean().default(false),
   content: evidenceContentSchema,
 });
 export type EvidenceInput = z.infer<typeof evidenceSchema>;

@@ -52,20 +52,25 @@ turno-nocturno/
 │   ├── s/[code]/                   # Portal de sesión de juego
 │   │   ├── session.css            # Estilos de la consola (3 zonas, tabs, players…)
 │   │   ├── page.tsx                # Server: valida sesión → SessionApp (referrer:no-referrer)
-│   │   ├── briefing/              # Fase 3 — preparación antes de arrancar el reloj
-│   │   │   ├── page.tsx           #   caso + sospechosos + reglas + recomendaciones
-│   │   │   ├── StartTurnButton.tsx#   "INICIAR TURNO NOCTURNO" → POST /api/sessions/activate
-│   │   │   └── briefing.css
-│   │   └── _components/           # Fase 4 — consola enriquecida
-│   │       ├── SessionApp.tsx     # Orquestador: barra sup, chat 40%, expediente 60%, barra inf
-│   │       ├── types.ts           # Tipos espejo de /state
+│   │   ├── mision/                # Refactor F3 — hoja de misión antes del reloj
+│   │   │   ├── page.tsx           #   8 secciones (situación, objetivos, disponible, reglas…)
+│   │   │   ├── StartTurnModal.tsx #   "Iniciar Turno Nocturno" + modal → /api/sessions/activate
+│   │   │   └── mision.css
+│   │   ├── briefing/page.tsx      #   redirige a /mision (compat de enlaces)
+│   │   └── _components/           # Refactor F4 — consola rebalanceada (expediente 65%/cmd 35%)
+│   │       ├── SessionApp.tsx     # Orquestador: barra sup, expediente 65%, Comandante 35%, barra inf
+│   │       ├── types.ts           # Tipos espejo de /state (incluye evidenceListing, commander)
 │   │       ├── markdown.tsx       # Render Markdown mínimo y seguro
-│   │       ├── useNewEvidenceNotification.ts  # Badges por tab + toasts
+│   │       ├── useNewEvidenceNotification.ts  # Badges por tab + toasts + chime + mute
 │   │       └── expediente/
-│   │           ├── SuspectsGrid.tsx        # Grid + modal de ficha + descartar (local)
-│   │           ├── DocumentsList.tsx       # Lista + visor con marca de agua / anti-descarga
+│   │           ├── ReporteInicial.tsx      # Parte informativo (is_report), abierto por default
+│   │           ├── SuspectsGrid.tsx        # Grid + modal de ficha PÚBLICA + descartar (local)
+│   │           ├── DocumentViewer.tsx      # Documentos/registros: lista + visor markdown protegido
+│   │           ├── PhotoGallery.tsx        # Fotos: galería + lightbox
 │   │           ├── AudioPlayer.tsx         # Controles (±10s) + transcripción
 │   │           ├── VideoPlayer.tsx         # controlsList + disablePictureInPicture
+│   │           ├── TestimonyViewer.tsx     # Testimonios: formato entrevista (testigo + audio)
+│   │           ├── LockedCard.tsx          # Placeholder de evidencia bloqueada (+ ETA)
 │   │           ├── NotesBoard.tsx          # Auto-guardado en sessions.player_notes
 │   │           └── EvidenceCodeInput.tsx   # Desbloqueo por código + historial
 │   │

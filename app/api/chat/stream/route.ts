@@ -7,8 +7,8 @@
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
 import { anthropic, COMMANDER_MODEL } from '@/lib/server/anthropic';
-import { getSessionByCode, getCommanderData, deliverEvidence } from '@/lib/server/game';
-import { buildCommanderSystem, ENVIAR_EVIDENCIA_TOOL } from '@/lib/server/prompts/commander.build';
+import { getSessionByCode, getCommanderData } from '@/lib/server/game';
+import { buildCommanderSystem } from '@/lib/server/prompts/commander.build';
 import { isExtractionAttempt } from '@/lib/server/guardrails';
 import { minutesElapsed } from '@/lib/engine/timeline';
 import { MAX_HINTS } from '@/lib/domain';
@@ -112,16 +112,12 @@ export async function POST(req: Request) {
       const send = (obj: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       let commanderText = '';
 
-      async function streamTurn(
-        msgs: AnthropicMessage[],
-        withTools: boolean,
-      ): Promise<Anthropic.Message> {
+      async function streamTurn(msgs: AnthropicMessage[]): Promise<void> {
         const s = client.messages.stream({
           model: COMMANDER_MODEL,
           max_tokens: 700,
           system,
           messages: msgs,
-          ...(withTools ? { tools: [ENVIAR_EVIDENCIA_TOOL] } : {}),
         });
         for await (const event of s) {
           if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
@@ -129,46 +125,12 @@ export async function POST(req: Request) {
             send({ type: 'text', delta: event.delta.text });
           }
         }
-        return s.finalMessage();
+        await s.finalMessage();
       }
 
       try {
-        // Turno 1 (con herramienta)
-        const first = await streamTurn(messages, true);
-        const toolUses = first.content.filter(
-          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
-        );
-
-        if (toolUses.length > 0) {
-          const toolResults: Anthropic.ToolResultBlockParam[] = [];
-          for (const tu of toolUses) {
-            const code = String((tu.input as { code?: string }).code ?? '').trim();
-            const res = await deliverEvidence(ctx, code, { elapsedMin });
-            if (res.ok) {
-              send({ type: 'evidence', item: res.item });
-              toolResults.push({
-                type: 'tool_result',
-                tool_use_id: tu.id,
-                content: `Entregada la evidencia ${code} (${res.item.title}) a los detectives.`,
-              });
-            } else {
-              toolResults.push({
-                type: 'tool_result',
-                tool_use_id: tu.id,
-                is_error: true,
-                content: `El archivo rechazó ${code}: ${res.reason}. Responde en personaje sin entregarla.`,
-              });
-            }
-          }
-
-          // Turno 2 (con el resultado de la herramienta, sin más herramientas)
-          const followMessages: AnthropicMessage[] = [
-            ...messages,
-            { role: 'assistant', content: first.content },
-            { role: 'user', content: toolResults },
-          ];
-          await streamTurn(followMessages, false);
-        }
+        // El Comandante ya NO entrega evidencia: solo responde en personaje (sin herramientas).
+        await streamTurn(messages);
 
         // Persistir la respuesta final del Comandante
         if (commanderText.trim()) {

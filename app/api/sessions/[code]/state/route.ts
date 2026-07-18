@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
-import { getSessionByCode, getOpenEvidence, processDueEvents } from '@/lib/server/game';
+import { getSessionByCode, getOpenEvidence, getEvidenceListing, processDueEvents } from '@/lib/server/game';
 import { toLegacyPublic } from '@/lib/server/evidence';
 import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { secondsRemaining } from '@/lib/engine/timeline';
-import { MAX_HINTS, SUSPECT_PUBLIC_COLUMNS, type SuspectPublic } from '@/lib/domain';
+import { MAX_HINTS, COMMANDER_NAME, COMMANDER_ROLE, SUSPECT_PUBLIC_COLUMNS, type SuspectPublic } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,10 +21,11 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
 
   const svc = createServiceClient();
 
-  const [{ data: rawMessages }, openEvidence, { data: suspectRows }, { data: verdict }] =
+  const [{ data: rawMessages }, openEvidence, evidenceListing, { data: suspectRows }, { data: verdict }] =
     await Promise.all([
       svc.from('chat_messages').select('*').eq('session_id', ctx.session.id).order('at', { ascending: true }),
       getOpenEvidence(ctx),
+      getEvidenceListing(ctx),
       svc
         .from('suspects')
         .select(SUSPECT_PUBLIC_COLUMNS) // SOLO ficha pública — jamás internal_notes ni data de variante
@@ -82,8 +83,10 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
       eraYear: ctx.caseRow.era_year,
       timeLimitMin: ctx.caseRow.time_limit_min,
     },
+    commander: { name: COMMANDER_NAME, role: COMMANDER_ROLE },
     messages,
     evidence,
+    evidenceListing,
     suspects,
     verdict: verdict ?? null,
     resolvedNarrative: verdict ? ctx.variant.solution_narrative : null,

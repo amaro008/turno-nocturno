@@ -170,6 +170,7 @@ export interface EvidenceListItem {
   public_description: string;
   open: boolean;
   unlocked_at_minute: number | null;
+  is_report: boolean;
 }
 
 /** Listado del expediente: TODAS las visibles con public_description + flag `open`. */
@@ -189,6 +190,7 @@ export async function getEvidenceListing(ctx: SessionContext): Promise<EvidenceL
     public_description: e.public_description,
     open: openReason(e, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) !== null,
     unlocked_at_minute: e.unlocked_at_minute,
+    is_report: e.is_report,
   }));
 }
 
@@ -305,14 +307,13 @@ export async function processDueEvents(ctx: SessionContext, now: Date = new Date
         voice_path: payload.voice_path ?? null,
       });
     } else if (ev.action === 'evidence') {
-      if (payload.text) {
-        await svc.from('chat_messages').insert({
-          session_id: ctx.session.id,
-          role: 'commander',
-          kind: 'text',
-          content: payload.text,
-        });
-      }
+      // Aviso breve en el chat (autoría o fallback) — la evidencia va al expediente.
+      await svc.from('chat_messages').insert({
+        session_id: ctx.session.id,
+        role: 'commander',
+        kind: 'text',
+        content: payload.text || 'Detectives, peritajes acaba de entregar más material. Está en su expediente.',
+      });
       const codes: string[] = [];
       const primary = payload.variant_codes?.[ctx.variantCode];
       if (primary) codes.push(primary);

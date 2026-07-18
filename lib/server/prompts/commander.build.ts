@@ -101,21 +101,8 @@ ${evidence}
 
 # PISTAS
 Si piden una pista y aún les quedan, da una orientación útil pero indirecta,
-sin nombrar al culpable. Cada pista descuenta puntaje.`.trim();
-}
+sin nombrar al culpable. Cada pista descuenta puntaje.
 
-/** Herramienta lógica de entrega de evidencia a petición (gated por el sistema). */
-export const ENVIAR_EVIDENCIA_TOOL = {
-  name: 'enviar_evidencia',
-  description:
-    'Abre a los detectives una pieza de evidencia que exista y esté disponible. ' +
-    'Úsala solo si piden algo concreto marcado como disponible. El sistema valida ' +
-    'variante y momento: puede rechazarla.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      code: { type: 'string' as const, description: 'Código exacto de la evidencia, p. ej. "CINTA-0158".' },
-    },
-    required: ['code'],
-  },
-};
+# RECORDATORIO
+No entregas evidencia. Solo respondes dudas sobre lo que YA está en su expediente.`.trim();
+}

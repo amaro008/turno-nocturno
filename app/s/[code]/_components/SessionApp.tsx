@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { formatClock } from '@/lib/ui/format-time';
-import type { SessionState, Msg, PublicEvidence, ExpTab, VerdictRow } from './types';
+import type { SessionState, Msg, PublicEvidence, EvidenceListItem, ExpTab, EvType, VerdictRow } from './types';
 import { useNewEvidenceNotification } from './useNewEvidenceNotification';
 import SessionSkeleton from './SessionSkeleton';
 import EmptyState from '@/components/EmptyState';
 import SuspectsGrid from './expediente/SuspectsGrid';
-import DocumentsList from './expediente/DocumentsList';
+import DocumentViewer from './expediente/DocumentViewer';
+import PhotoGallery from './expediente/PhotoGallery';
+import TestimonyViewer from './expediente/TestimonyViewer';
+import ReporteInicial from './expediente/ReporteInicial';
+import LockedCard from './expediente/LockedCard';
 import AudioPlayer from './expediente/AudioPlayer';
 import VideoPlayer from './expediente/VideoPlayer';
 import NotesBoard from './expediente/NotesBoard';
@@ -22,13 +26,13 @@ interface Resolution {
   feedback?: string;
 }
 
-const TABS: { id: ExpTab; label: string }[] = [
-  { id: 'sospechosos', label: 'Sospechosos' },
-  { id: 'documentos', label: 'Documentos' },
-  { id: 'audios', label: 'Audios' },
-  { id: 'videos', label: 'Videos' },
-  { id: 'notas', label: 'Mis notas' },
-  { id: 'codigos', label: 'Códigos' },
+const TYPE_TABS: { id: ExpTab; label: string; type: EvType }[] = [
+  { id: 'documentos', label: 'Documentos', type: 'document' },
+  { id: 'fotos', label: 'Fotos', type: 'photo' },
+  { id: 'audios', label: 'Audios', type: 'audio' },
+  { id: 'videos', label: 'Videos', type: 'video' },
+  { id: 'testimonios', label: 'Testimonios', type: 'testimony' },
+  { id: 'registros', label: 'Registros', type: 'record' },
 ];
 
 export default function SessionApp({ code }: { code: string }) {
@@ -38,18 +42,14 @@ export default function SessionApp({ code }: { code: string }) {
   const [streaming, setStreaming] = useState(false);
   const [liveText, setLiveText] = useState('');
   const [pendingUser, setPendingUser] = useState<string | null>(null);
-  const [pendingEvidence, setPendingEvidence] = useState<PublicEvidence[]>([]);
-  const [tab, setTab] = useState<ExpTab>('sospechosos');
+  const [tab, setTab] = useState<ExpTab>('reporte');
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const [mobileView, setMobileView] = useState<'chat' | 'exp'>('chat');
+  const [mobileView, setMobileView] = useState<'exp' | 'chat'>('exp');
   const threadRef = useRef<HTMLDivElement>(null);
 
   const reduce = useReducedMotion();
-  const { badges, toasts, acknowledge, dismissToast } = useNewEvidenceNotification(
-    state?.evidence ?? [],
-    tab,
-  );
+  const { badges, toasts, acknowledge, dismissToast, muted, setMuted } = useNewEvidenceNotification(state?.evidence ?? [], tab);
 
   const fetchState = useCallback(async () => {
     const res = await fetch(`/api/sessions/${code}/state`, { cache: 'no-store' });
@@ -81,12 +81,9 @@ export default function SessionApp({ code }: { code: string }) {
   useEffect(() => {
     const el = threadRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [state?.messages, liveText, pendingEvidence, streaming]);
+  }, [state?.messages, liveText, streaming]);
 
-  function switchTab(t: ExpTab) {
-    setTab(t);
-    acknowledge(t);
-  }
+  function switchTab(t: ExpTab) { setTab(t); acknowledge(t); }
 
   const send = useCallback(
     async (text: string, isHint = false) => {
@@ -95,7 +92,6 @@ export default function SessionApp({ code }: { code: string }) {
       setPendingUser(isHint ? 'Necesitamos una pista, Comandante.' : text);
       setInput('');
       setLiveText('');
-      setPendingEvidence([]);
       try {
         const res = await fetch('/api/chat/stream', {
           method: 'POST',
@@ -117,7 +113,6 @@ export default function SessionApp({ code }: { code: string }) {
             if (!line) continue;
             const obj = JSON.parse(line.slice(5).trim());
             if (obj.type === 'text') setLiveText((t) => t + obj.delta);
-            else if (obj.type === 'evidence') setPendingEvidence((e) => [...e, obj.item]);
           }
         }
       } finally {
@@ -125,7 +120,6 @@ export default function SessionApp({ code }: { code: string }) {
         setStreaming(false);
         setPendingUser(null);
         setLiveText('');
-        setPendingEvidence([]);
       }
     },
     [code, streaming, fetchState],
@@ -149,11 +143,18 @@ export default function SessionApp({ code }: { code: string }) {
   if (!state) return <SessionSkeleton />;
 
   const cdClass = seconds > 60 * 60 ? 'green' : seconds >= 30 * 60 ? 'amber' : 'red';
-  const docs = state.evidence.filter((e) => e.kind === 'document');
-  const audios = state.evidence.filter((e) => e.kind === 'audio');
-  const videos = state.evidence.filter((e) => e.kind === 'video');
   const hintsLeft = state.maxHints - state.hintsUsed;
-  const totalNew = (badges.documentos ?? 0) + (badges.audios ?? 0) + (badges.videos ?? 0);
+  const elapsedMin = Math.max(0, Math.floor((state.case.timeLimitMin * 60 - seconds) / 60));
+
+  // Índices por tipo.
+  const openByType = (t: EvType) => state.evidence.filter((e) => e.type === t);
+  const lockedByType = (t: EvType) => state.evidenceListing.filter((e) => e.type === t && !e.open);
+  const openCount = (t: EvType) => openByType(t).length;
+
+  const reportMeta = state.evidenceListing.find((e) => e.is_report);
+  const reportItem = reportMeta ? state.evidence.find((e) => e.code === reportMeta.code) ?? null : null;
+
+  const totalNew = Object.values(badges).reduce((a, b) => a + (b ?? 0), 0);
 
   return (
     <div className="sess">
@@ -162,8 +163,7 @@ export default function SessionApp({ code }: { code: string }) {
         <div className="brand">
           <div className="badge" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-2)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" />
-              <path d="M9 12.5 11 14.5 15.5 9.5" />
+              <path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5l-8-3Z" /><path d="M9 12.5 11 14.5 15.5 9.5" />
             </svg>
           </div>
           <div style={{ minWidth: 0 }}>
@@ -171,44 +171,94 @@ export default function SessionApp({ code }: { code: string }) {
             <div className="sbar-place mono">{state.case.city} · {state.case.eraYear}</div>
           </div>
         </div>
-
         <div className="sbar-center">
           <div className={'cd-big ' + cdClass}>{formatClock(seconds)}</div>
           <div className="cd-caption mono">para el veredicto</div>
         </div>
-
         <div className="sbar-right">
-          {!resolution && (
-            <button className="btn primary" onClick={() => setVerdictOpen(true)}>Cerrar el caso</button>
-          )}
+          {!resolution && <button className="btn primary" onClick={() => setVerdictOpen(true)}>Cerrar el caso</button>}
         </div>
       </header>
 
-      {/* Toggle chat/expediente (solo tablet vertical y menor) */}
+      {/* Toggle expediente/chat (móvil) */}
       <div className="console-toggle">
-        <button className={mobileView === 'chat' ? 'active' : ''} onClick={() => setMobileView('chat')}>Chat</button>
         <button className={mobileView === 'exp' ? 'active' : ''} onClick={() => { setMobileView('exp'); acknowledge(tab); }}>
           Expediente{totalNew > 0 && <span className="ct-badge">{totalNew}</span>}
         </button>
+        <button className={mobileView === 'chat' ? 'active' : ''} onClick={() => setMobileView('chat')}>Comandante</button>
       </div>
 
-      {/* ===== Zona central ===== */}
-      <main className={'console mv-' + mobileView}>
-        {/* Chat (40%) */}
-        <section className="chat">
-          <div className="thread scroll" ref={threadRef}>
+      {/* ===== Zona central: Expediente 65% (primario) + Comandante 35% ===== */}
+      <main className={'console exp-first mv-' + mobileView}>
+        {/* Expediente (65%) */}
+        <section className="exp" onContextMenu={(e) => e.preventDefault()}>
+          <div className="tabs" role="tablist">
+            <TabBtn id="reporte" label="Reporte inicial" tab={tab} onClick={switchTab} badge={0} />
+            <TabBtn id="sospechosos" label="Sospechosos" tab={tab} onClick={switchTab} count={state.suspects.length} badge={0} />
+            {TYPE_TABS.map((t) => (
+              <TabBtn key={t.id} id={t.id} label={t.label} tab={tab} onClick={switchTab} count={openCount(t.type)} badge={badges[t.id] ?? 0} />
+            ))}
+            <TabBtn id="notas" label="Notas" tab={tab} onClick={switchTab} badge={0} />
+            <TabBtn id="codigos" label="Códigos" tab={tab} onClick={switchTab} badge={0} />
+          </div>
+
+          <div className="panels scroll">
+            <motion.div key={tab} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
+              {tab === 'reporte' && <ReporteInicial report={reportItem} sessionCode={code} />}
+              {tab === 'sospechosos' && <SuspectsGrid suspects={state.suspects} />}
+              {TYPE_TABS.map((t) =>
+                tab === t.id ? (
+                  <TypePanel key={t.id} type={t.type} label={t.label} open={openByType(t.type)} locked={lockedByType(t.type)} elapsedMin={elapsedMin} code={code} />
+                ) : null,
+              )}
+              {tab === 'notas' && <NotesBoard code={code} initial={state.playerNotes} />}
+              {tab === 'codigos' && <EvidenceCodeInput code={code} onUnlocked={fetchState} />}
+            </motion.div>
+
+            {['documentos', 'fotos', 'audios', 'videos', 'testimonios', 'registros'].includes(tab) && (
+              <div className="protect-note">Los materiales son parte de tu sesión activa. Compartirlos rompe el juego para otros.</div>
+            )}
+          </div>
+        </section>
+
+        {/* Comandante (35%) */}
+        <aside className="cmd">
+          <div className="cmd-head">
+            <div className="cmd-avatar">C</div>
+            <div style={{ minWidth: 0 }}>
+              <b className="cmd-name">{state.commander.name}</b>
+              <div className="cmd-role mono">{state.commander.role}</div>
+            </div>
+            <button className="cmd-mute" onClick={() => setMuted((m) => !m)} title={muted ? 'Activar sonido' : 'Silenciar avisos'}>
+              {muted ? '🔇' : '🔔'}
+            </button>
+          </div>
+          <div className="cmd-help">
+            Pregúntame dudas específicas sobre la evidencia, los sospechosos o el procedimiento.
+            <b> No puedo entregarte pruebas que aún no aparecen en tu expediente.</b>
+          </div>
+
+          <div className="cmd-thread scroll" ref={threadRef}>
             {state.messages.map((m) => <MessageRow key={m.id} m={m} />)}
             {pendingUser && (
               <div className="row me"><div className="avatar">TÚ</div><div className="stack"><div className="bubble">{pendingUser}</div></div></div>
             )}
-            {pendingEvidence.map((ev) => (
-              <div className="row them" key={'pe-' + ev.id}><div className="avatar">C</div><div className="stack"><EvidenceCard ev={ev} /></div></div>
-            ))}
             {streaming && (
               <div className="row them"><div className="avatar">C</div><div className="stack">
                 {liveText ? <div className="bubble">{liveText}</div> : <div className="bubble typing"><i /><i /><i /></div>}
               </div></div>
             )}
+          </div>
+
+          <div className="cmd-hints">
+            <span className="mono">Pistas {state.hintsUsed}/{state.maxHints}</span>
+            <button
+              className="btn ghost cmd-hint-btn"
+              disabled={streaming || hintsLeft <= 0 || !!resolution}
+              onClick={() => { if (window.confirm('Pedir una pista descuenta puntaje. ¿Continuar?')) send('', true); }}
+            >
+              Pedir pista {hintsLeft <= 0 ? '(sin pistas)' : '(−puntaje)'}
+            </button>
           </div>
 
           <div className="composer">
@@ -217,14 +267,9 @@ export default function SessionApp({ code }: { code: string }) {
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      if (input.trim()) send(input.trim());
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim()) send(input.trim()); } }}
                   rows={1}
-                  placeholder="Escribe al Comandante — Enter envía, Shift+Enter salta línea"
+                  placeholder="Escribe tu duda… (Enter para enviar)"
                   disabled={streaming || !!resolution}
                   aria-label="Mensaje"
                 />
@@ -234,51 +279,6 @@ export default function SessionApp({ code }: { code: string }) {
               </button>
             </div>
           </div>
-        </section>
-
-        {/* Expediente (60%) */}
-        <aside className="exp" onContextMenu={(e) => e.preventDefault()}>
-          <div className="tabs" role="tablist">
-            {TABS.map((t) => (
-              <button key={t.id} className={'tab' + (tab === t.id ? ' active' : '')} onClick={() => switchTab(t.id)} role="tab" aria-selected={tab === t.id}>
-                {t.label}
-                {t.id === 'sospechosos' && <span className="tcount">{state.suspects.length}</span>}
-                {t.id === 'documentos' && docs.length > 0 && <span className="tcount">{docs.length}</span>}
-                {t.id === 'audios' && audios.length > 0 && <span className="tcount">{audios.length}</span>}
-                {t.id === 'videos' && videos.length > 0 && <span className="tcount">{videos.length}</span>}
-                {(badges[t.id] ?? 0) > 0 && <span className="tbadge">{badges[t.id]}</span>}
-              </button>
-            ))}
-          </div>
-
-          <div className="panels scroll">
-            <motion.div
-              key={tab}
-              initial={reduce ? false : { opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22 }}
-            >
-              {tab === 'sospechosos' && <SuspectsGrid suspects={state.suspects} />}
-              {tab === 'documentos' && <DocumentsList docs={docs} sessionCode={code} />}
-              {tab === 'audios' &&
-                (audios.length ? audios.map((a) => <AudioPlayer key={a.id} item={a} />) : (
-                  <EmptyState ill="audio" title="Sin audios todavía" message="Los audios que reciban del Comandante aparecerán aquí con su transcripción." />
-                ))}
-              {tab === 'videos' &&
-                (videos.length ? videos.map((v) => <VideoPlayer key={v.id} item={v} />) : (
-                  <EmptyState ill="video" title="Sin videos todavía" message="Los videos del expediente aparecerán aquí cuando lleguen." />
-                ))}
-              {tab === 'notas' && <NotesBoard code={code} initial={state.playerNotes} />}
-              {tab === 'codigos' && <EvidenceCodeInput code={code} onUnlocked={fetchState} />}
-            </motion.div>
-
-            {(tab === 'documentos' || tab === 'audios' || tab === 'videos') && (
-              <div className="protect-note">
-                Los documentos están protegidos y son parte de tu sesión activa. Compartirlos rompe el
-                juego para otros.
-              </div>
-            )}
-          </div>
         </aside>
       </main>
 
@@ -287,24 +287,11 @@ export default function SessionApp({ code }: { code: string }) {
         <div className="hints">
           <span className="mono">Pistas</span>
           <span className="hint-pip">
-            {Array.from({ length: state.maxHints }).map((_, i) => (
-              <b key={i} className={i < state.hintsUsed ? 'used' : ''} />
-            ))}
+            {Array.from({ length: state.maxHints }).map((_, i) => <b key={i} className={i < state.hintsUsed ? 'used' : ''} />)}
           </span>
           <span className="mono" style={{ color: 'var(--ink-3)' }}>{hintsLeft} disponibles</span>
         </div>
-        <button
-          className="btn ghost"
-          disabled={streaming || hintsLeft <= 0 || !!resolution}
-          onClick={() => {
-            if (window.confirm('Pedir una pista descuenta puntaje. ¿Continuar?')) send('', true);
-          }}
-        >
-          Pedir pista {hintsLeft <= 0 ? '(sin pistas)' : `(−puntaje)`}
-        </button>
-        {!resolution && (
-          <button className="btn primary sfoot-close" onClick={() => setVerdictOpen(true)}>Cerrar el caso</button>
-        )}
+        {!resolution && <button className="btn primary sfoot-close" onClick={() => setVerdictOpen(true)}>Cerrar el caso</button>}
       </footer>
 
       {/* Toasts */}
@@ -312,7 +299,7 @@ export default function SessionApp({ code }: { code: string }) {
         {toasts.map((t) => (
           <button className="toast" key={t.id} onClick={() => { switchTab(t.tab); dismissToast(t.id); }}>
             <span className="toast-dot" />
-            Nueva evidencia: <b>{t.title}</b>
+            Nueva evidencia recibida: <b>{t.title}</b>
           </button>
         ))}
       </div>
@@ -323,13 +310,48 @@ export default function SessionApp({ code }: { code: string }) {
   );
 }
 
-/* ---------- Subcomponentes de chat / veredicto ---------- */
+/* ---------- Tab button ---------- */
+function TabBtn({ id, label, tab, onClick, count, badge }: { id: ExpTab; label: string; tab: ExpTab; onClick: (t: ExpTab) => void; count?: number; badge: number }) {
+  return (
+    <button className={'tab' + (tab === id ? ' active' : '')} onClick={() => onClick(id)} role="tab" aria-selected={tab === id}>
+      {label}
+      {typeof count === 'number' && count > 0 && <span className="tcount">{count}</span>}
+      {badge > 0 && <span className="tbadge">{badge}</span>}
+    </button>
+  );
+}
 
+/* ---------- Panel por tipo (open + locked) ---------- */
+function TypePanel({ type, label, open, locked, elapsedMin, code }: { type: EvType; label: string; open: PublicEvidence[]; locked: EvidenceListItem[]; elapsedMin: number; code: string }) {
+  const empty = open.length === 0;
+  return (
+    <>
+      {empty && locked.length === 0 && (
+        <EmptyState ill="folder" title={`Sin ${label.toLowerCase()} todavía`} message="Cuando llegue más material aparecerá aquí." />
+      )}
+      {!empty && (
+        <>
+          {type === 'document' && <DocumentViewer docs={open} sessionCode={code} />}
+          {type === 'record' && <DocumentViewer docs={open} sessionCode={code} />}
+          {type === 'photo' && <PhotoGallery photos={open} />}
+          {type === 'testimony' && <TestimonyViewer items={open} />}
+          {type === 'audio' && open.map((a) => <AudioPlayer key={a.id} item={a} />)}
+          {type === 'video' && open.map((v) => <VideoPlayer key={v.id} item={v} />)}
+        </>
+      )}
+      {locked.length > 0 && (
+        <div className="locked-list">
+          {locked.map((l) => <LockedCard key={l.id} item={l} elapsedMin={elapsedMin} />)}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------- Chat ---------- */
 function MessageRow({ m }: { m: Msg }) {
   const reduce = useReducedMotion();
-  const anim = reduce
-    ? {}
-    : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25 } };
+  const anim = reduce ? {} : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25 } };
   if (m.kind === 'system') return <motion.div className="sys" {...anim}>{m.content}</motion.div>;
   const mine = m.role === 'players';
   return (
@@ -351,9 +373,7 @@ function MessageRow({ m }: { m: Msg }) {
 function EvidenceCard({ ev }: { ev: PublicEvidence }) {
   const reduce = useReducedMotion();
   const kindLabel = ev.kind === 'audio' ? 'AUD' : ev.kind === 'video' ? 'VID' : 'DOC';
-  const anim = reduce
-    ? {}
-    : { initial: { opacity: 0, x: 44 }, animate: { opacity: 1, x: 0 }, transition: { type: 'spring' as const, stiffness: 420, damping: 20 } };
+  const anim = reduce ? {} : { initial: { opacity: 0, x: 30 }, animate: { opacity: 1, x: 0 }, transition: { type: 'spring' as const, stiffness: 420, damping: 20 } };
   return (
     <motion.article className="ev" {...anim}>
       <div className="ev-tag">{kindLabel}</div>
@@ -361,7 +381,7 @@ function EvidenceCard({ ev }: { ev: PublicEvidence }) {
         <div className="ev-ic">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
         </div>
-        <div><div className="ev-title">{ev.title}</div><div className="ev-sub">{ev.kind} · {ev.code} · míralo en el Expediente</div></div>
+        <div><div className="ev-title">{ev.title}</div><div className="ev-sub">está en tu expediente</div></div>
       </div>
     </motion.article>
   );

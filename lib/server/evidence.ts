@@ -15,7 +15,7 @@ import {
 } from '@/lib/domain';
 
 const BASE_COLS =
-  'id, case_id, code, title, type, scope, variant_id, initial, unlocked_at_minute, unlocked_by_event_id, public_description, admin_notes';
+  'id, case_id, code, title, type, scope, variant_id, initial, unlocked_at_minute, unlocked_by_event_id, public_description, admin_notes, is_report';
 
 /** Todas las piezas base (metadata) de un caso. */
 export async function loadCaseEvidenceBase(caseId: string): Promise<EvidenceBase[]> {
@@ -87,6 +87,10 @@ export interface LegacyPublicEvidence {
   transcript: string | null;
   media_path: string | null;
   mediaUrl: string | null;
+  // Extras tipados para los viewers de la consola:
+  caption: string | null;
+  witness_name: string | null;
+  record_type: string | null;
 }
 
 function legacyKind(e: EvidenceFull): 'audio' | 'video' | 'document' {
@@ -107,9 +111,12 @@ export async function toLegacyPublic(e: EvidenceFull): Promise<LegacyPublicEvide
     title: e.title,
     public_description: e.public_description,
     body_md: e.type === 'document' || e.type === 'testimony' || e.type === 'record' ? e.content.body_md : null,
-    transcript: evidenceText(e) && (e.type === 'audio' || e.type === 'video') ? evidenceText(e) : e.type === 'photo' ? e.content.caption : null,
+    transcript: e.type === 'audio' || e.type === 'video' ? e.content.transcript : null,
     media_path: mediaPath,
     mediaUrl: await signedUrl(mediaPath, SESSION_MEDIA_TTL),
+    caption: e.type === 'photo' ? e.content.caption : null,
+    witness_name: e.type === 'testimony' ? e.content.witness_name : null,
+    record_type: e.type === 'record' ? e.content.record_type : null,
   };
 }
 

@@ -70,25 +70,30 @@ sesión → veredicto) con 3-5 mesas reales; medir intención de recompra.
 - RF-U06 Canje de código: input, validación, si es válido queda en biblioteca
 
 ### Sesión de juego (refinado en Fase 3–4)
-- RF-S01 **Briefing** antes de arrancar: leer caso y sospechosos; el reloj y el sorteo de
-  variante ocurren al confirmar "INICIAR TURNO NOCTURNO" (no al salir de biblioteca)
+- RF-S01 **Hoja de misión** antes de arrancar (Refactor F3): situación, 3 objetivos, material
+  disponible, reglas, reloj; el reloj y el sorteo de variante ocurren al confirmar "Iniciar Turno
+  Nocturno" (no al salir de biblioteca)
 - RF-S02 Sorteo de variante al confirmar el inicio (uniforme entre `variants WHERE active`)
 - RF-S03 Chat Comandante: streaming SSE, "escribiendo…", historial persistido; input textarea
   (Enter envía, Shift+Enter salta línea)
 - RF-S04 Notas de voz (pregrabadas + generadas) con UI de mensajería
-- RF-S05 Adjuntos de evidencia como tarjetas dentro del chat
 - RF-S06 Motor de eventos temporales por caso (idempotente, sobrevive recargas)
 - RF-S07 **Cronómetro grande H:MM:SS con color por umbral**: verde (>60 min), ámbar (30–60),
-  rojo pulsando (<30); visible en la barra superior
-- RF-S08 **Consola de 3 zonas**: barra superior (caso + cronómetro + cerrar caso), zona central
-  (chat 40% / Expediente 60%) y barra inferior (pistas + pedir pista + cerrar caso)
-- RF-S08b **Expediente con 6 tabs**: Sospechosos (fichas + modal + descartar local),
-  Documentos (visor markdown), Audios (player + transcripción), Videos (player restringido),
-  Mis notas (auto-guardado en `sessions.player_notes`), Códigos (desbloqueo + historial)
-- RF-S08c **Notificaciones de evidencia nueva**: badge rojo por tab + toast "Nueva evidencia: …"
+  rojo (<30); visible en la barra superior
+- RF-S08 **Consola rebalanceada (Refactor F4): el Expediente es protagónico (65%) y el Comandante
+  es columna secundaria (35%)**. El material base está **abierto desde el minuto 0**; el Comandante
+  **no entrega evidencia bajo demanda**, solo responde dudas específicas sobre lo ya abierto.
+- RF-S08b **Expediente con tabs por tipo**: Reporte inicial (abierto por default), Sospechosos
+  (ficha pública, sin variante), Documentos, Fotos, Audios, Videos, Testimonios, Registros
+  (cada uno con su visor + placeholders de evidencia bloqueada), Notas, Códigos.
+- RF-S08c **Notificaciones de evidencia nueva**: badge por tab + toast "Nueva evidencia recibida:
+  …" + chime discreto (con mute) + aviso breve del Comandante en el chat.
 - RF-S09 Desbloqueo por código de evidencia (compatibilidad con dinámica de códigos impresos)
-- RF-S10 Sistema de pistas (3 niveles, resta puntuación)
-- RF-S11 Guardarraíles del Comandante (chat no conoce culprit; evaluación aislada)
+- RF-S10 Sistema de pistas (3 niveles, resta puntuación); "Pedir pista" visible en la columna del
+  Comandante + contador N/3.
+- RF-S11 Guardarraíles reforzados del Comandante: no conoce al culpable; recibe solo la ficha
+  pública + subset de variante sin culpabilidad + evidencia con `public_description` (contenido
+  solo de las abiertas); jamás entrega evidencia; evaluación de veredicto aislada.
 - RF-S12 Veredicto → evaluación → resolución narrada
 - RF-S13 Reanudación tras recarga (chat, evidencia, tiempo, pistas y notas persisten)
 - RF-S14 **Protección anti-descarga** (fricción razonable): URLs firmadas TTL 10 min,

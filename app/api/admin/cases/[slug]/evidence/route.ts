@@ -39,6 +39,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
       initial: e.initial,
       unlocked_at_minute: e.initial ? null : e.unlocked_at_minute ?? null,
       unlocked_by_event_id: e.unlocked_by_event_id ?? null,
+      is_report: e.is_report ?? false,
     };
     let evidenceId = e.id ?? null;
     if (op === 'create') {

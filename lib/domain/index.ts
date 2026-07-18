@@ -259,5 +259,7 @@ export const CODE_REDEEM_WINDOW_HOURS = 24; // desde sent_at para canjear
 export const CODE_TOTAL_LIFE_DAYS = 5; // desde created_at, vida total
 export const SESSION_WINDOW_HOURS = 24; // desde activated_at para completar
 export const MAX_HINTS = 3;
+export const COMMANDER_NAME = 'Comandante Vega';
+export const COMMANDER_ROLE = 'Fiscalía';
 export const HINT_PENALTY = 15; // puntos por pista
 export const BASE_SCORE = 100;

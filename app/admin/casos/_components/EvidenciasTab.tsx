@@ -18,7 +18,7 @@ const TYPE_TABS: { value: EvidenceType; label: string; prefix: string }[] = [
 interface Draft {
   id?: string; code?: string; title?: string; type?: EvidenceType;
   scope?: 'shared' | 'variant'; variant_id?: string | null;
-  public_description?: string; admin_notes?: string;
+  public_description?: string; admin_notes?: string; is_report?: boolean;
   initial?: boolean; unlocked_at_minute?: number | null; unlocked_by_event_id?: string | null;
   body_md?: string | null; transcript?: string | null; image_path?: string | null;
   audio_path?: string | null; video_path?: string | null; caption?: string | null;
@@ -31,7 +31,7 @@ function toDraft(e: EvidenceFull): Draft {
   const b: Draft = {
     id: e.id, code: e.code, title: e.title, type: e.type, scope: e.scope, variant_id: e.variant_id,
     public_description: e.public_description, admin_notes: e.admin_notes, initial: e.initial,
-    unlocked_at_minute: e.unlocked_at_minute, unlocked_by_event_id: e.unlocked_by_event_id,
+    unlocked_at_minute: e.unlocked_at_minute, unlocked_by_event_id: e.unlocked_by_event_id, is_report: e.is_report,
   };
   switch (e.type) {
     case 'document': return { ...b, body_md: e.content.body_md, transcript: e.content.transcript, image_path: e.content.image_path };
@@ -59,6 +59,7 @@ function toPayload(f: Draft) {
     initial: f.initial ?? false,
     unlocked_at_minute: f.initial ? null : f.unlocked_at_minute ?? null,
     unlocked_by_event_id: f.initial ? null : f.unlocked_by_event_id ?? null,
+    is_report: f.is_report ?? false,
     content,
   };
 }
@@ -267,6 +268,16 @@ function EvidenceSheet({
             ? <div className="up-warn">⚠ Contiene un término de juicio (&ldquo;{judged}&rdquo;). La descripción pública debe ser neutra.</div>
             : <div className="field-hint">Debe describir qué es, no qué prueba.</div>}
         </div>
+
+        {type === 'document' && (
+          <div className="full" style={{ display: 'flex', alignItems: 'center' }}>
+            <label className="toggle">
+              <input type="checkbox" checked={f.is_report ?? false} onChange={(e) => set('is_report', e.target.checked)} />
+              <span className="track" />
+              <span>Es el <b>reporte inicial</b> (se abre por defecto en la consola)</span>
+            </label>
+          </div>
+        )}
 
         {/* Contenido por tipo */}
         {type === 'testimony' && (

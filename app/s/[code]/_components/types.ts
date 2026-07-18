@@ -11,6 +11,23 @@ export interface PublicEvidence {
   transcript: string | null;
   media_path: string | null;
   mediaUrl: string | null;
+  caption: string | null;
+  witness_name: string | null;
+  record_type: string | null;
+}
+
+export type EvType = 'document' | 'photo' | 'audio' | 'video' | 'testimony' | 'record';
+
+export interface EvidenceListItem {
+  id: string;
+  code: string;
+  title: string;
+  type: EvType;
+  scope: 'shared' | 'variant';
+  public_description: string;
+  open: boolean;
+  unlocked_at_minute: number | null;
+  is_report: boolean;
 }
 
 export interface SessionSuspect {
@@ -53,12 +70,24 @@ export interface SessionState {
   maxHints: number;
   playerNotes: string;
   case: { title: string; city: string; eraYear: number; timeLimitMin: number };
+  commander: { name: string; role: string };
   messages: Msg[];
   evidence: PublicEvidence[];
+  evidenceListing: EvidenceListItem[];
   suspects: SessionSuspect[];
   verdict: VerdictRow | null;
   resolvedNarrative: string | null;
   resolvedCulprit: string | null;
 }
 
-export type ExpTab = 'sospechosos' | 'documentos' | 'audios' | 'videos' | 'notas' | 'codigos';
+export type ExpTab =
+  | 'reporte'
+  | 'sospechosos'
+  | 'documentos'
+  | 'fotos'
+  | 'audios'
+  | 'videos'
+  | 'testimonios'
+  | 'registros'
+  | 'notas'
+  | 'codigos';
