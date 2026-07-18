@@ -13,7 +13,7 @@ export default function TestimonyViewer({ items }: { items: PublicEvidence[] }) 
             <div className="testi-avatar">{(t.witness_name ?? '?').slice(0, 1).toUpperCase()}</div>
             <div>
               <b>{t.witness_name ?? 'Testigo'}</b>
-              <div className="testi-meta mono">{t.code} · {t.title}</div>
+              <div className="testi-meta mono">{t.title}</div>
             </div>
           </header>
           {t.mediaUrl && (

@@ -33,8 +33,7 @@ export default function DocumentViewer({ docs, sessionCode }: { docs: PublicEvid
           <div className="modal doc-viewer no-select" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.preventDefault()}>
             <div className="doc-viewer-head">
               <div>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--amber)', letterSpacing: '0.1em' }}>{open.code}</div>
-                <h2 style={{ margin: '4px 0 0' }}>{open.title}</h2>
+                <h2 style={{ margin: 0 }}>{open.title}</h2>
               </div>
               <button className="btn ghost" onClick={() => setOpen(null)}>Cerrar</button>
             </div>

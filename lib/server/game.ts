@@ -161,9 +161,9 @@ export async function getCommanderData(
   return { suspects, evidence };
 }
 
+// NOTA ANTI-SPOILER: sin `code` — el sufijo de variante revelaría la variante.
 export interface EvidenceListItem {
   id: string;
-  code: string;
   title: string;
   type: EvidenceBase['type'];
   scope: EvidenceBase['scope'];
@@ -183,7 +183,6 @@ export async function getEvidenceListing(ctx: SessionContext): Promise<EvidenceL
   ]);
   return catalog.map((e) => ({
     id: e.id,
-    code: e.code,
     title: e.title,
     type: e.type,
     scope: e.scope,
@@ -194,15 +193,19 @@ export async function getEvidenceListing(ctx: SessionContext): Promise<EvidenceL
   }));
 }
 
-/** Detalle de una pieza: contenido completo SOLO si está abierta en la sesión. */
-export async function getEvidenceDetail(ctx: SessionContext, code: string): Promise<PublicEvidence | null> {
+/**
+ * Detalle de una pieza: contenido completo SOLO si está abierta en la sesión.
+ * `ref` puede ser el `id` opaco (uuid, lo que usa el cliente) o el `code` interno.
+ */
+export async function getEvidenceDetail(ctx: SessionContext, ref: string): Promise<PublicEvidence | null> {
   const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
   const [catalog, unlockedCodes, firedEventIds] = await Promise.all([
     getCatalog(ctx.caseRow.id, ctx.variant.id),
     getDeliveredCodes(ctx.session.id),
     getFiredTimelineIds(ctx.session.id),
   ]);
-  const base = catalog.find((e) => e.code === code.toUpperCase());
+  const needle = ref.trim();
+  const base = catalog.find((e) => e.id === needle) ?? catalog.find((e) => e.code === needle.toUpperCase());
   if (!base) return null;
   if (openReason(base, { variantId: ctx.variant.id, elapsedMin, firedEventIds, unlockedCodes }) === null) return null;
   const [full] = await assembleEvidence([base]);

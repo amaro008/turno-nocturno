@@ -23,13 +23,17 @@ export async function POST(req: Request) {
   if (!ctx) return NextResponse.json({ error: 'not-found' }, { status: 404 });
 
   const target = evidence_code.trim().toUpperCase();
+  const variantSuffix = `-${ctx.variant.code.toUpperCase()}`;
   const elapsedMin = ctx.session.activated_at ? minutesElapsed(ctx.session.activated_at) : 0;
 
-  // Verificar que el código exista en el catálogo visible de la sesión.
+  // Catálogo visible (shared + variante sorteada). El jugador puede escribir el
+  // código SIN sufijo de variante: se resuelve a `{code}-{variante}` de su sesión.
   const catalog = await getCatalog(ctx.caseRow.id, ctx.variant.id);
   const svc = createServiceClient();
 
-  const item = catalog.find((e) => e.code.toUpperCase() === target);
+  const item =
+    catalog.find((e) => e.code.toUpperCase() === target) ??
+    catalog.find((e) => e.code.toUpperCase() === target + variantSuffix);
 
   if (!item) {
     await svc.from('session_events').insert({
@@ -42,11 +46,12 @@ export async function POST(req: Request) {
 
   const delivered = await getDeliveredCodes(ctx.session.id);
   if (delivered.includes(item.code)) {
-    return NextResponse.json({ ok: true, already: true, item: { code: item.code, title: item.title } });
+    // NUNCA devolver el `code` (revelaría la variante). Solo id + título.
+    return NextResponse.json({ ok: true, already: true, item: { id: item.id, title: item.title } });
   }
 
   const res = await deliverEvidence(ctx, item.code, { elapsedMin });
   if (!res.ok) return NextResponse.json({ ok: false, reason: res.reason }, { status: 200 });
 
-  return NextResponse.json({ ok: true, item: res.item });
+  return NextResponse.json({ ok: true, item: res.item }); // res.item ya no incluye code
 }

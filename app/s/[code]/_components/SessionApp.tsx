@@ -152,7 +152,7 @@ export default function SessionApp({ code }: { code: string }) {
   const openCount = (t: EvType) => openByType(t).length;
 
   const reportMeta = state.evidenceListing.find((e) => e.is_report);
-  const reportItem = reportMeta ? state.evidence.find((e) => e.code === reportMeta.code) ?? null : null;
+  const reportItem = reportMeta ? state.evidence.find((e) => e.id === reportMeta.id) ?? null : null;
 
   const totalNew = Object.values(badges).reduce((a, b) => a + (b ?? 0), 0);
 

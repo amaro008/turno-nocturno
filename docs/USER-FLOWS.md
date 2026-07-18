@@ -99,7 +99,9 @@ secundaria** (35%). Layout:
     `TestimonyViewer` formato entrevista, registros en `DocumentViewer`). En cada tab, además de
     lo abierto, se muestran **placeholders bloqueados** ("Disponible más tarde…" + minuto estimado)
     sin spoilear qué son.
-  - **Notas** (auto-guardado en `sessions.player_notes`) y **Códigos** (desbloqueo por código).
+  - **Notas** (auto-guardado en `sessions.player_notes`) y **Códigos** (desbloqueo por código:
+    el jugador escribe el código **sin sufijo de variante** —`CINTA-0158`, `NECRO`— y el backend
+    resuelve `{code}-{variante}` de su sesión).
 - **Comandante (35%, secundario)**: header con nombre y rol ("Comandante Vega — Fiscalía"), ayuda
   contextual ("pregúntame dudas… NO puedo entregarte pruebas que aún no aparecen"), historial
   compacto, input ("Escribe tu duda… (Enter para enviar)"), botón **"Pedir pista"** visible +
@@ -112,6 +114,14 @@ del Comandante en su chat ("peritajes entregó más material. Está en su expedi
 
 Protección anti-descarga: URLs firmadas TTL 10 min, anti-selección/menú contextual, marca de
 agua con código de sesión, `controlsList`/`disablePictureInPicture`, `referrer:no-referrer`.
+
+**Anti-spoiler — el código interno de evidencia jamás se expone al cliente:** el `code` de
+`evidence_items` lleva el sufijo de la variante (`…-A`/`-B`/`-C`), así que enviarlo al navegador
+revelaría la variante sorteada y, con ella, al culpable. La UI **nunca** renderiza el `code`
+(ni en tarjetas, visores, galería, testimonios ni toasts) y el payload de `/state` y `/evidence`
+**no lo incluye**: solo `title` y `public_description` (más el contenido tipado de las piezas
+abiertas) son visibles al jugador, referenciados por `id` opaco. Ver **ARCHITECTURE.md → Contrato
+de payload al cliente**.
 
 ### Bucle principal
 1. Al entrar, leen el **Reporte inicial** y el material base (todo lo `initial` está abierto).

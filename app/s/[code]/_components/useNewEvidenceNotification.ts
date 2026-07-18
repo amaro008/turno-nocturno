@@ -47,17 +47,17 @@ export function useNewEvidenceNotification(evidence: PublicEvidence[], activeTab
   const [badges, setBadges] = useState<Record<string, number>>({});
   const [toasts, setToasts] = useState<EvidenceToast[]>([]);
   const [muted, setMuted] = useState(false);
-  const prevCodes = useRef<Set<string> | null>(null);
+  const prevIds = useRef<Set<string> | null>(null);
   const activeRef = useRef(activeTab);
   const mutedRef = useRef(muted);
   activeRef.current = activeTab;
   mutedRef.current = muted;
 
   useEffect(() => {
-    const codes = new Set(evidence.map((e) => e.code));
-    if (prevCodes.current === null) { prevCodes.current = codes; return; }
-    const added = evidence.filter((e) => !prevCodes.current!.has(e.code));
-    prevCodes.current = codes;
+    const ids = new Set(evidence.map((e) => e.id));
+    if (prevIds.current === null) { prevIds.current = ids; return; }
+    const added = evidence.filter((e) => !prevIds.current!.has(e.id));
+    prevIds.current = ids;
     if (added.length === 0) return;
 
     setBadges((b) => {
@@ -68,7 +68,7 @@ export function useNewEvidenceNotification(evidence: PublicEvidence[], activeTab
       }
       return next;
     });
-    setToasts((t) => [...t, ...added.map((e) => ({ id: `${e.code}-${Date.now()}`, title: e.title, tab: tabForType(e.type) }))]);
+    setToasts((t) => [...t, ...added.map((e) => ({ id: `${e.id}-${Date.now()}`, title: e.title, tab: tabForType(e.type) }))]);
     if (!mutedRef.current) playChime();
   }, [evidence]);
 

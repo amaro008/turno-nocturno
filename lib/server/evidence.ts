@@ -76,9 +76,10 @@ const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 // -------------------------------------------------------------- Adaptador ---
 // Forma "legacy" que consume la consola actual (se reemplaza en la fase de
 // managers por tipo). NUNCA incluye admin_notes.
+// NOTA ANTI-SPOILER: NUNCA incluye `code` — el sufijo de variante (…-A/-B/-C)
+// revelaría la variante sorteada. El cliente referencia por `id` opaco.
 export interface LegacyPublicEvidence {
   id: string;
-  code: string;
   kind: 'audio' | 'video' | 'document';
   type: EvidenceType;
   title: string;
@@ -105,7 +106,6 @@ export async function toLegacyPublic(e: EvidenceFull): Promise<LegacyPublicEvide
   const mediaPath = evidenceMediaPath(e);
   return {
     id: e.id,
-    code: e.code,
     kind: legacyKind(e),
     type: e.type,
     title: e.title,

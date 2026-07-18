@@ -8,7 +8,6 @@ export default function VideoPlayer({ item }: { item: PublicEvidence }) {
       <div className="audio-head">
         <span className="pill-kind video">VIDEO</span>
         <b>{item.title}</b>
-        <span className="mono audio-code">{item.code}</span>
       </div>
 
       {item.mediaUrl ? (

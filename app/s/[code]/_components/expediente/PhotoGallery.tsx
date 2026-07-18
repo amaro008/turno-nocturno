@@ -13,7 +13,7 @@ export default function PhotoGallery({ photos }: { photos: PublicEvidence[] }) {
           <button className="photo-tile" key={p.id} onClick={() => setOpen(p)} onContextMenu={(e) => e.preventDefault()}>
             {p.mediaUrl
               ? <img src={p.mediaUrl} alt={p.title} draggable={false} />
-              : <span className="mono photo-none">{p.code}</span>}
+              : <span className="mono photo-none">SIN IMAGEN</span>}
             <span className="photo-cap">{p.title}</span>
           </button>
         ))}
@@ -24,7 +24,6 @@ export default function PhotoGallery({ photos }: { photos: PublicEvidence[] }) {
           <div className="lightbox" onClick={(e) => e.stopPropagation()}>
             {open.mediaUrl && <img src={open.mediaUrl} alt={open.title} draggable={false} />}
             <div className="lightbox-meta">
-              <div className="mono" style={{ fontSize: 11, color: 'var(--amber)' }}>{open.code}</div>
               <b>{open.title}</b>
               {open.caption && <p>{open.caption}</p>}
               {!open.caption && open.public_description && <p>{open.public_description}</p>}

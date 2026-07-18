@@ -101,6 +101,27 @@ La separación es solo de rutas y middleware.
 4. Personaje del Comandante ante presión
 5. Rutas admin: doble verificación de rol
 6. Rate limits en endpoints públicos sensibles (`/api/auth/*`, `/api/codes/redeem`)
+7. **El código interno de evidencia jamás se expone al cliente.** El `code` de
+   `evidence_items` lleva el sufijo de la variante (`…-A`/`-B`/`-C`); enviarlo al
+   navegador revelaría la variante sorteada y, con ella, al culpable. Solo `title`
+   y `public_description` (más el contenido tipado de las piezas abiertas) son
+   visibles al jugador. Ver la sección **Contrato de payload al cliente**.
+
+## Contrato de payload al cliente (anti-spoiler)
+- **Identificador opaco:** el cliente referencia cada evidencia **solo por `id`**
+  (uuid). El `code` interno nunca sale del servidor: ni en `/api/sessions/[code]/state`,
+  ni en `/api/sessions/[code]/evidence[/:ecode]`, ni en `/api/evidence/unlock`.
+- **Proyección:** `toLegacyPublic` (`lib/server/evidence.ts`) y `EvidenceListItem`
+  (`lib/server/game.ts`) **no incluyen `code`**. El enlace mensaje→evidencia se
+  resuelve server-side (`idByCode`/`evById` en el route de `/state`); el mensaje
+  entregado al cliente trae `evidence` por `id`, sin `evidence_code`.
+- **Desbloqueo por código impreso:** el jugador escribe el código **sin sufijo**
+  (`CINTA-0158`, `NECRO`); `unlock/route.ts` resuelve a `{code}-{variante}` de su
+  sesión y responde solo con `{ id, title }`. Únicamente se echa de vuelta el
+  texto **que el propio jugador tecleó** (historial del input), nunca un código
+  del sistema.
+- **Regresión blindada:** `tests/integration/anti-spoiler-code.test.ts` verifica
+  que la proyección nunca emite `code` ni filtra el sufijo de variante.
 
 ## Deployment
 - `main` → producción en Vercel

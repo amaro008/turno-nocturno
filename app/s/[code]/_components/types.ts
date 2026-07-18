@@ -1,8 +1,9 @@
 // Tipos compartidos por la consola de sesión (espejo de /state).
 
+// NOTA ANTI-SPOILER: sin `code` — el sufijo de variante (…-A/-B/-C) revelaría la
+// variante sorteada. El cliente referencia la evidencia por `id` opaco.
 export interface PublicEvidence {
   id: string;
-  code: string;
   kind: 'audio' | 'video' | 'document';
   type: 'document' | 'photo' | 'audio' | 'video' | 'testimony' | 'record';
   title: string;
@@ -20,7 +21,6 @@ export type EvType = 'document' | 'photo' | 'audio' | 'video' | 'testimony' | 'r
 
 export interface EvidenceListItem {
   id: string;
-  code: string;
   title: string;
   type: EvType;
   scope: 'shared' | 'variant';
@@ -50,7 +50,6 @@ export interface Msg {
   kind: 'text' | 'voice' | 'evidence_card' | 'system';
   content: string;
   voice_path: string | null;
-  evidence_code: string | null;
   evidence: PublicEvidence | null;
 }
 

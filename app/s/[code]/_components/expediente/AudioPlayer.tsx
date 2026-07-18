@@ -40,7 +40,6 @@ export default function AudioPlayer({ item }: { item: PublicEvidence }) {
       <div className="audio-head">
         <span className="pill-kind audio">AUDIO</span>
         <b>{item.title}</b>
-        <span className="mono audio-code">{item.code}</span>
       </div>
 
       {item.mediaUrl ? (

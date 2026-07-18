@@ -35,19 +35,24 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
     ]);
 
   // Evidencia abierta → forma legacy con URL de media firmada a 10 min (anti-descarga).
+  // El enlace mensaje→evidencia se resuelve server-side por `id`; el `code` (con
+  // sufijo de variante) NUNCA se envía al cliente.
   const evidence = await Promise.all(openEvidence.map((e) => toLegacyPublic(e)));
-  const evByCode = new Map(evidence.map((e) => [e.code, e]));
+  const idByCode = new Map(openEvidence.map((e) => [e.code, e.id]));
+  const evById = new Map(evidence.map((e) => [e.id, e]));
 
-  const messages = (rawMessages ?? []).map((m) => ({
-    id: m.id,
-    at: m.at,
-    role: m.role,
-    kind: m.kind,
-    content: m.content,
-    voice_path: m.voice_path,
-    evidence_code: m.evidence_code,
-    evidence: m.evidence_code ? evByCode.get(m.evidence_code) ?? null : null,
-  }));
+  const messages = (rawMessages ?? []).map((m) => {
+    const evId = m.evidence_code ? idByCode.get(m.evidence_code) : null;
+    return {
+      id: m.id,
+      at: m.at,
+      role: m.role,
+      kind: m.kind,
+      content: m.content,
+      voice_path: m.voice_path,
+      evidence: evId ? evById.get(evId) ?? null : null,
+    };
+  });
 
   // Ficha PÚBLICA de sospechosos (con foto firmada). Neutra, igual en toda variante.
   // La víctima no aparece como sospechoso acusable.
