@@ -2,9 +2,26 @@
 
 import { useMemo, useState } from 'react';
 import type { EvidenceFull, EvidenceType, Variant, TimelineEvent } from '@/lib/domain';
+import { evidenceMediaPath } from '@/lib/domain';
 import { entityOp } from './entityApi';
 import MediaUploader from './MediaUploader';
 import Sheet from './Sheet';
+import { useSignedMedia } from './useSignedMedia';
+
+/** Miniatura de una foto de evidencia (firma la URL del bucket privado). */
+function EvidenceTile({ e, onOpen }: { e: EvidenceFull; onOpen: () => void }) {
+  const url = useSignedMedia(evidenceMediaPath(e));
+  return (
+    <button className="ev-tile" onClick={onOpen}>
+      <div className="ev-tile-img">
+        {url
+          ? <img src={url} alt={e.title} draggable={false} />
+          : <span className="mono">{e.code}</span>}
+      </div>
+      <span className="ev-tile-cap">{e.title}</span>
+    </button>
+  );
+}
 
 const TYPE_TABS: { value: EvidenceType; label: string; prefix: string }[] = [
   { value: 'document', label: 'Documentos', prefix: 'DOC' },
@@ -131,10 +148,7 @@ export default function EvidenciasTab({
         {type === 'photo' ? (
           <div className="ev-gallery">
             {list.map((e) => (
-              <button key={e.id} className="ev-tile" onClick={() => { setIsNew(false); setEditing(toDraft(e)); }}>
-                <div className="ev-tile-img"><span className="mono">{e.code}</span></div>
-                <span className="ev-tile-cap">{e.title}</span>
-              </button>
+              <EvidenceTile key={e.id} e={e} onOpen={() => { setIsNew(false); setEditing(toDraft(e)); }} />
             ))}
           </div>
         ) : (

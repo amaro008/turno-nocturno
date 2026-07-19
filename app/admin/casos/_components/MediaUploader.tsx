@@ -6,6 +6,7 @@ import type { ImageSpec } from '@/lib/domain/image-specs';
 import { aspectRatioValue } from '@/lib/domain/image-specs';
 import SpecPanel, { formatMaxSize } from '@/components/SpecPanel';
 import { loadImageMeta, cropToAspect, compressImage } from '@/lib/ui/image-client';
+import { useSignedMedia } from './useSignedMedia';
 
 type Kind = 'image' | 'audio' | 'video';
 
@@ -54,6 +55,8 @@ export default function MediaUploader({
   const [pending, setPending] = useState<Pending | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const maxBytes = spec ? spec.maxSizeMB * 1024 * 1024 : FALLBACK_MAX[kind];
+  // Previsualización de lo ya guardado (bucket privado → URL firmada bajo demanda).
+  const savedPreview = useSignedMedia(kind === 'image' && !pending ? value : null);
 
   const doUpload = useCallback(
     async (file: File) => {
@@ -206,6 +209,11 @@ export default function MediaUploader({
             <div className="up-progress"><div className="up-bar" style={{ width: '70%' }} /><span className="mono">{stage || 'Subiendo…'}</span></div>
           ) : value ? (
             <div className="up-has">
+              {kind === 'image' && (
+                savedPreview
+                  ? <img className="up-thumb" src={savedPreview} alt="" draggable={false} />
+                  : <span className="up-thumb up-thumb-load mono">…</span>
+              )}
               <span className="up-check">✓</span>
               <span className="up-path mono">{value.split('/').pop()}</span>
               <button type="button" className="up-remove" onClick={(e) => { e.stopPropagation(); onUploaded(null); }}>Quitar</button>
