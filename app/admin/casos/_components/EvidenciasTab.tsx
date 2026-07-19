@@ -315,6 +315,16 @@ function EvidenceSheet({
             <textarea className="input" value={f.transcript ?? ''} onChange={(e) => set('transcript', e.target.value)} /></div>
         )}
 
+        {f.scope === 'variant' && mediaField && (
+          <div className="full up-warn ev-variant-warn">
+            ⚠ Evidencia de <b>variante</b>: el archivo debe verse <b>idéntico</b> al de las
+            demás variantes de esta misma pieza. Solo debe cambiar el detalle específico de la
+            variante (p. ej. la hora impresa). Si difiere en items, montos u otros elementos
+            visibles, revelaría al jugador qué variante le tocó. Consulta las Notas admin para
+            el detalle exacto que debe cambiar.
+          </div>
+        )}
+
         {mediaField && (
           <div className="full">
             <MediaUploader
