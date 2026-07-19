@@ -55,6 +55,7 @@ export default function MediaUploader({
   const [pending, setPending] = useState<Pending | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const maxBytes = spec ? spec.maxSizeMB * 1024 * 1024 : FALLBACK_MAX[kind];
+  const [zoom, setZoom] = useState(false);
   // Previsualización de lo ya guardado (bucket privado → URL firmada bajo demanda).
   const savedPreview = useSignedMedia(kind === 'image' && !pending ? value : null);
 
@@ -211,11 +212,16 @@ export default function MediaUploader({
             <div className="up-has">
               {kind === 'image' && (
                 savedPreview
-                  ? <img className="up-thumb" src={savedPreview} alt="" draggable={false} />
+                  ? <img className="up-thumb up-thumb-zoom" src={savedPreview} alt="" draggable={false}
+                      title="Clic para ampliar" onClick={(e) => { e.stopPropagation(); setZoom(true); }} />
                   : <span className="up-thumb up-thumb-load mono">…</span>
               )}
-              <span className="up-check">✓</span>
-              <span className="up-path mono">{value.split('/').pop()}</span>
+              <span className="up-has-txt">
+                <span className="up-path mono"><span className="up-check">✓</span> {value.split('/').pop()}</span>
+                {kind === 'image' && savedPreview && (
+                  <button type="button" className="up-zoom-link" onClick={(e) => { e.stopPropagation(); setZoom(true); }}>Ampliar</button>
+                )}
+              </span>
               <button type="button" className="up-remove" onClick={(e) => { e.stopPropagation(); onUploaded(null); }}>Quitar</button>
             </div>
           ) : (
@@ -228,6 +234,13 @@ export default function MediaUploader({
         </div>
       )}
       {error && <div className="note-error" style={{ marginTop: 8 }}>{error}</div>}
+
+      {zoom && savedPreview && (
+        <div className="up-lightbox" onClick={() => setZoom(false)} role="dialog" aria-modal="true">
+          <img src={savedPreview} alt="" onClick={(e) => e.stopPropagation()} />
+          <button type="button" className="up-lightbox-x" onClick={() => setZoom(false)} aria-label="Cerrar">✕</button>
+        </div>
+      )}
     </div>
   );
 }
