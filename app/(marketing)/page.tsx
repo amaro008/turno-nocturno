@@ -8,20 +8,18 @@ import { DIFFICULTY_LABEL } from '@/lib/domain';
 import ManillaFolder from '@/components/noir/ManillaFolder';
 import ConfidentialStamp from '@/components/noir/ConfidentialStamp';
 import PaperclipCorner from '@/components/noir/PaperclipCorner';
-import CoffeeStain from '@/components/noir/CoffeeStain';
 import RedString from '@/components/noir/RedString';
-import TypewriterText from '@/components/noir/TypewriterText';
 import Reveal from '@/components/noir/Reveal';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Turno Nocturno — Reabre el caso',
+  title: 'Turno Nocturno — Juego de misterio criminal',
   description:
-    'Juego de misterio conducido por IA. Reúne a tu mesa, reabran un caso criminal archivado y encuentren al culpable antes de que el reloj llegue a cero.',
+    'Juego de misterio criminal conducido por IA para jugar con amigos. Reúne a tu escuadra, sigan las pistas y nombren al culpable —cómo lo hizo y por qué— antes de que el reloj llegue a cero.',
   openGraph: {
-    title: 'Turno Nocturno — Reabre el caso',
-    description: 'Una noche, una mesa, el reloj en contra. El culpable cambia en cada partida.',
+    title: 'Turno Nocturno — Juego de misterio criminal',
+    description: 'Una noche, una escuadra, el reloj en contra. Sigan las pistas y nombren al culpable.',
     type: 'website',
     locale: 'es_MX',
     siteName: 'Turno Nocturno',
@@ -33,29 +31,35 @@ function caseNumber(slug: string) {
 }
 const PIN_ROT = [-2.5, 1.8, -1.2, 2.4, -1.8, 1.2];
 
+// El procedimiento de juego (secuencia real: por eso va numerado).
 const STEPS = [
-  { n: '01', label: 'PASO 01', stamp: 'ARCHIVO', title: 'Crea tu cuenta', text: 'Nombre, correo y tu ciudad. Menos de un minuto y quedas dentro del sistema.', asset: 'landing.how_step_1' },
-  { n: '02', label: 'PASO 02', stamp: 'PENDIENTE', title: 'Recibe tu código', text: 'Te llega por correo un código de acceso para el caso que elegiste.', asset: 'landing.how_step_2' },
-  { n: '03', label: 'PASO 03', stamp: 'ACTIVO', title: 'Reúne a tu mesa', text: 'De 2 a 6 detectives frente a una pantalla. El reloj arranca.', asset: 'landing.how_step_3' },
+  { n: '01', ic: '// elige', title: 'Abre un expediente', text: 'Casos ambientados en distintas épocas, cada uno con su ciudad, su víctima y su verdad. Tú eliges cuál investigar.' },
+  { n: '02', ic: '// reúne', title: 'Junta a tu escuadra', text: 'De 2 a 6 detectives en la misma partida. Repártanse la sala: cada quien sigue su pista.' },
+  { n: '03', ic: '// investiga', title: 'Investiga contra el reloj', text: 'Consulta al Comandante por voz y texto, abre las pruebas del expediente y toma notas. Nada se entrega gratis.' },
+  { n: '04', ic: '// acusa', title: 'Nombra al culpable', text: 'Quién, cómo y por qué. Cierran el caso y el Comandante evalúa qué tan cerca estuvieron de la verdad.' },
 ] as const;
 
-const TESTIMONIALS = [
-  { quote: 'Terminamos gritándole al Comandante como si fuera real. Dos horas que se sintieron veinte minutos.', name: 'Mariana G.', role: 'Mesa de 4 · CDMX', rot: -2.5, asset: 'landing.testimonial_1_avatar' },
-  { quote: 'La evidencia de época está increíble. Sentías que estabas en el 89 de verdad.', name: 'Diego R.', role: 'Mesa de 5 · Monterrey', rot: 1.8, asset: 'landing.testimonial_2_avatar' },
-  { quote: 'Lo volvimos a jugar y el culpable era otro. No lo podíamos creer.', name: 'Sofía L.', role: 'Mesa de 3 · GDL', rot: -1.2, asset: 'landing.testimonial_3_avatar' },
+const WHY = [
+  { k: 'en equipo', t: 'Se juega con amigos', d: 'De 2 a 6 detectives en la misma sala. Sospechen, discutan y acusen juntos.' },
+  { k: 'a reloj', t: 'Tienen una sola noche', d: 'El tiempo corre desde que abren el caso. Cada minuto que pierden pesa en el veredicto.' },
+  { k: 'el mando', t: 'No están solos', d: 'Un Comandante los guía por voz, les exige y los presiona… pero jamás les da la respuesta.' },
 ] as const;
 
-const initials = (name: string) =>
-  name.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const REVIEWS = [
+  { quote: 'Terminamos gritándonos quién era el culpable a la una de la mañana. Ningún juego nos había metido tanto.', who: 'Escuadra de 4 · CDMX', rot: -1.4 },
+  { quote: 'La primera vez acusamos al equivocado. Nos quedamos con la espina toda la semana.', who: 'Grupo de 3 · Monterrey', rot: 1.1 },
+  { quote: 'Se siente estar dentro de una película ochentera. La voz del Comandante te presiona de verdad.', who: 'Detective primeriza · Puebla', rot: -0.6 },
+] as const;
 
 export default async function HomePage() {
   const cases = await getActiveCases();
+  const upcoming = Math.max(0, Math.min(2, 3 - cases.length));
 
   return (
     <>
       <SiteNav />
 
-      {/* ===================== HERO — escritorio de detective ===================== */}
+      {/* ===================== HERO — escritorio de investigación ===================== */}
       <section className="noir-hero" aria-label="Turno Nocturno">
         <div className="noir-hero-photo" aria-hidden="true">
           <SiteAsset slot="landing.hero" sizes="100vw" priority />
@@ -63,86 +67,113 @@ export default async function HomePage() {
         <div className="noir-hero-lamp" aria-hidden="true" />
         <div className="noir-hero-grain" aria-hidden="true" />
 
-        {/* Props del escritorio */}
-        <svg className="prop prop-magnifier" viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="42" cy="42" r="26" fill="rgba(20,25,35,0.35)" stroke="#8a939c" strokeWidth="3" />
-          <circle cx="42" cy="42" r="26" fill="none" stroke="#c9d2db" strokeWidth="1" />
-          <rect x="62" y="62" width="30" height="9" rx="4" transform="rotate(45 62 62)" fill="#5a4632" />
-        </svg>
-        <svg className="prop prop-typewriter" viewBox="0 0 120 80" aria-hidden="true">
-          <rect x="14" y="34" width="92" height="34" rx="5" fill="#1c1c1c" />
-          <rect x="24" y="20" width="72" height="20" rx="3" fill="#262626" />
-          <rect x="34" y="8" width="52" height="16" rx="2" fill="#2e2e2e" />
-          <rect x="40" y="12" width="40" height="8" fill="#111" />
-          {[0, 1, 2].flatMap((r) =>
-            [0, 1, 2, 3, 4, 5, 6, 7].map((c) => (
-              <circle key={`${r}-${c}`} cx={26 + c * 10} cy={44 + r * 7} r="2.2" fill="#3d3d3d" />
-            )),
-          )}
-        </svg>
-        <div className="prop prop-coffee" aria-hidden="true">
-          <svg viewBox="0 0 100 100">
-            <ellipse cx="46" cy="30" rx="30" ry="9" fill="#2a1c10" />
-            <path d="M16 30v22c0 14 12 24 30 24s30-10 30-24V30" fill="#e8d9b8" stroke="#b9a67e" strokeWidth="2" />
-            <path d="M76 36c12-2 16 16 2 20" fill="none" stroke="#b9a67e" strokeWidth="4" />
-            <ellipse cx="46" cy="30" rx="24" ry="6" fill="#3a2413" />
-          </svg>
-          <CoffeeStain className="prop-coffee-stain" size={70} rotate={18} opacity={0.4} />
-        </div>
-        <div className="prop prop-smoke" aria-hidden="true">
-          <span className="smoke s1" />
-          <span className="smoke s2" />
-          <span className="smoke s3" />
-          <span className="cigarette" />
-        </div>
-
-        {/* Folder central con el copy */}
         <div className="wrap noir-hero-inner">
           <div className="noir-hero-folderwrap">
-            <ConfidentialStamp variant="ARCHIVO MUERTO" rotate={-12} className="noir-hero-stamp" />
+            <ConfidentialStamp variant="CONFIDENCIAL" rotate={-11} className="noir-hero-stamp" />
             <PaperclipCorner />
-            <ManillaFolder label="EXP. 89-1027-H" tabSide="left" className="noir-hero-folder">
-              <div className="noir-eyebrow font-typewriter">Fiscalía · expediente reabierto</div>
-              <h1 className="noir-hero-title font-editorial">Reabre el caso.</h1>
-              <TypewriterText
-                as="p"
-                className="noir-hero-tag"
-                text="Interroga a los sospechosos. Encuentra al culpable, cómo lo hizo y por qué… antes de que el reloj llegue a cero."
-                speed={26}
-              />
+            <ManillaFolder label="TURNO NOCTURNO" tabSide="left" className="noir-hero-folder">
+              <div className="noir-eyebrow font-typewriter">Juego de misterio criminal · conducido por IA</div>
+              <h1 className="noir-hero-title font-editorial">Cada expediente esconde un culpable. <em>Encuéntrenlo.</em></h1>
+              <p className="noir-hero-tag">
+                Reúne a tu escuadra, sigan las pistas, crucen la evidencia y nombren al culpable —cómo lo hizo y por qué— antes de que el reloj llegue a cero.
+              </p>
               <div className="noir-hero-cta">
-                <Link className="noir-btn primary" href="/casos">Reabrir un caso</Link>
-                <Link className="noir-btn" href="/como-funciona">Cómo funciona</Link>
+                <Link className="noir-btn primary" href="/registro">Crear cuenta y empezar</Link>
+                <Link className="noir-btn" href="#casos">Ver los expedientes</Link>
               </div>
               <div className="noir-hero-meta font-typewriter">
-                2–6 detectives · 2–3 horas · el culpable cambia en cada partida
+                2–6 detectives · 2–3 horas · en español · se juega en equipo
               </div>
             </ManillaFolder>
           </div>
         </div>
       </section>
 
-      {/* ===================== CÓMO FUNCIONA — expedientes en abanico ===================== */}
+      {/* ===================== BANDA — turno nocturno ===================== */}
+      <section className="noir-shift">
+        <div className="wrap">
+          <Reveal className="shift-inner">
+            <span className="noir-kicker font-typewriter">02:14 a.m. · la ciudad duerme</span>
+            <p className="shift-line font-editorial">
+              Los peores crímenes ocurren cuando las luces se apagan. Alguien tiene que estar de guardia para resolverlos —{' '}
+              <em>ese es el turno nocturno.</em>
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ===================== CÓMO FUNCIONA ===================== */}
       <section className="noir-band como" id="como">
         <div className="wrap">
           <Reveal className="noir-head">
-            <span className="noir-kicker font-typewriter">Procedimiento</span>
-            <h2 className="font-editorial">Tres pasos y están dentro del caso.</h2>
+            <span className="noir-kicker font-typewriter">El procedimiento</span>
+            <h2 className="font-editorial">Del expediente al veredicto, en una sola noche.</h2>
           </Reveal>
-          <div className="folders-fan">
+          <div className="steps-grid">
             {STEPS.map((s, i) => (
-              <Reveal key={s.n} delay={i * 0.08} className={`fan-item fan-${i}`}>
-                <div className="step-folder">
-                  <PaperclipCorner />
-                  <ConfidentialStamp variant="EVIDENCIA" rotate={7} className="step-stamp" />
-                  <ManillaFolder label={s.label}>
-                    <div className="step-photo">
-                      <SiteAsset slot={s.asset} sizes="(max-width: 900px) 100vw, 340px" fallbackLabel={s.n} />
+              <Reveal key={s.n} delay={i * 0.07} className="step-card">
+                <div className="step-card-top font-typewriter">
+                  <span className="step-card-num">{s.n}</span>
+                  <span className="step-card-ic">{s.ic}</span>
+                </div>
+                <h3 className="font-editorial">{s.title}</h3>
+                <p>{s.text}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================== EXPEDIENTES ===================== */}
+      <section className="noir-cases" id="casos">
+        <div className="wrap">
+          <Reveal className="noir-head light left">
+            <span className="noir-kicker font-typewriter">Los expedientes</span>
+            <h2 className="font-editorial">Casos de otra época, cada uno con su propia verdad.</h2>
+            <p className="noir-head-sub">Cada caso es su propio mundo: su década, su ciudad, sus secretos. Empezamos con uno y el catálogo sigue creciendo.</p>
+          </Reveal>
+
+          <div className="case-grid">
+            {cases.map((c, i) => (
+              <Reveal key={c.slug} delay={i * 0.06} className="case-card">
+                <Link href={`/casos/${c.slug}`} className="case-folder-card" style={{ '--rot': `${PIN_ROT[i % PIN_ROT.length] * 0.2}deg` } as React.CSSProperties}>
+                  <div className="case-photo">
+                    <PaperclipCorner />
+                    {c.coverUrl ? (
+                      <img src={c.coverUrl} alt={c.title} draggable={false} />
+                    ) : (
+                      <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
+                    )}
+                  </div>
+                  <div className="case-cbody">
+                    <div className="case-meta font-typewriter"><span>Exp. {caseNumber(c.slug)}</span><span>{c.city} · {c.era_year}</span></div>
+                    <h3 className="font-typewriter">{c.title}</h3>
+                    <p>{c.marketing_synopsis || c.synopsis}</p>
+                    <div className="case-foot">
+                      <span className="case-tags font-typewriter">{DIFFICULTY_LABEL[c.difficulty]} · 2–6 detectives</span>
+                      <span className="case-badge on font-typewriter">Disponible</span>
                     </div>
-                    <div className="step-num font-editorial">{s.n}</div>
-                    <h3 className="font-typewriter">{s.title}</h3>
-                    <p>{s.text}</p>
-                  </ManillaFolder>
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
+
+            {Array.from({ length: upcoming }).map((_, i) => (
+              <Reveal key={`soon-${i}`} delay={(cases.length + i) * 0.06} className="case-card locked">
+                <div className="case-folder-card is-soon">
+                  <ConfidentialStamp variant="CLASIFICADO" rotate={-8} className="case-soon-stamp" />
+                  <div className="case-photo">
+                    <span className="case-photo-empty font-typewriter">Expediente sellado</span>
+                  </div>
+                  <div className="case-cbody">
+                    <div className="case-meta font-typewriter"><span>Exp. ??-????</span><span>otra época</span></div>
+                    <h3 className="font-typewriter">Nuevo expediente</h3>
+                    <p>Otra ciudad, otra década, otro crimen sin resolver. En preparación.</p>
+                    <div className="case-foot">
+                      <span className="case-tags font-typewriter">En preparación</span>
+                      <span className="case-badge soon font-typewriter">Pronto</span>
+                    </div>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -150,67 +181,48 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===================== CASOS — muro de investigación ===================== */}
-      <section className="noir-board texture-cork" id="casos">
-        <div className="wrap">
-          <Reveal className="noir-head light">
-            <span className="noir-kicker font-typewriter">Casos abiertos</span>
-            <h2 className="font-editorial">El muro de investigación.</h2>
+      {/* ===================== POR QUÉ ENGANCHA ===================== */}
+      <section className="noir-band why">
+        <div className="wrap why-grid">
+          <Reveal className="why-copy">
+            <span className="noir-kicker font-typewriter">Por qué engancha</span>
+            <h2 className="font-editorial">No es una historia. <em>Es una investigación.</em></h2>
+            <p className="why-lede">Aquí no lees un misterio: lo resuelves. Se sospecha, se discute y se acusa —en equipo y con el reloj corriendo en contra.</p>
+            <div className="why-list">
+              {WHY.map((w) => (
+                <div key={w.k} className="why-item">
+                  <span className="why-k font-typewriter">↳ {w.k}</span>
+                  <span className="why-t"><b className="font-editorial">{w.t}</b><span>{w.d}</span></span>
+                </div>
+              ))}
+            </div>
           </Reveal>
-
-          <div className="board-wall">
-            <RedString
-              className="board-string"
-              points={[{ x: 16, y: 26 }, { x: 50, y: 20 }, { x: 84, y: 32 }, { x: 52, y: 70 }]}
-            />
-            {cases.length === 0 && <p className="board-empty font-typewriter">Muy pronto se abre el primer expediente…</p>}
-            {cases.map((c, i) => (
-              <Reveal key={c.slug} delay={i * 0.06} className="pin-wrap">
-                <Link href={`/casos/${c.slug}`} className="pin-card" style={{ transform: `rotate(${PIN_ROT[i % PIN_ROT.length]}deg)` }}>
-                  <span className="pushpin" aria-hidden="true" />
-                  <div className="pin-photo">
-                    {c.coverUrl ? (
-                      <img src={c.coverUrl} alt={c.title} draggable={false} />
-                    ) : (
-                      <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
-                    )}
-                    <span className="pin-diff font-typewriter">{DIFFICULTY_LABEL[c.difficulty]}</span>
-                  </div>
-                  <div className="pin-body">
-                    <div className="pin-file font-typewriter">EXP. {caseNumber(c.slug)} · {c.city} {c.era_year}</div>
-                    <h3 className="font-typewriter">{c.title}</h3>
-                    <p>{c.marketing_synopsis || c.synopsis}</p>
-                    <span className="pin-cta font-typewriter">Ver expediente →</span>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
+          <Reveal delay={0.1} className="why-visual">
+            <div className="why-board">
+              <RedString className="why-board-string" points={[{ x: 22, y: 30 }, { x: 62, y: 22 }, { x: 46, y: 72 }]} />
+              <span className="why-pin p1" aria-hidden="true" />
+              <span className="why-pin p2" aria-hidden="true" />
+              <span className="why-pin p3" aria-hidden="true" />
+              <span className="why-board-tag font-typewriter">Muro de investigación</span>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ===================== TESTIMONIOS — notas al aire ===================== */}
+      {/* ===================== RESEÑAS ===================== */}
       <section className="noir-band testi-noir">
         <div className="wrap">
           <Reveal className="noir-head">
-            <span className="noir-kicker font-typewriter">Del expediente de la prensa</span>
-            <h2 className="font-editorial">Lo que dijeron las mesas.</h2>
+            <span className="noir-kicker font-typewriter">Declaraciones de los testigos</span>
+            <h2 className="font-editorial">Lo que dicen quienes ya cerraron un caso.</h2>
           </Reveal>
-          <div className="notes-wall">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 0.08}>
-                <div className="postit" style={{ transform: `rotate(${t.rot}deg)` }}>
-                  {i === 1 && <CoffeeStain className="postit-coffee" size={80} rotate={-10} opacity={0.35} />}
-                  <p>“{t.quote}”</p>
-                  <div className="postit-person">
-                    <div className="postit-avatar">
-                      <SiteAsset slot={t.asset} sizes="52px" fallbackLabel={initials(t.name)} />
-                    </div>
-                    <div>
-                      <div className="postit-sign font-hand">{t.name}</div>
-                      <div className="postit-role font-typewriter">{t.role}</div>
-                    </div>
-                  </div>
+          <div className="reviews-grid">
+            {REVIEWS.map((r, i) => (
+              <Reveal key={i} delay={i * 0.08}>
+                <div className="review-card" style={{ transform: `rotate(${r.rot}deg)` }}>
+                  <div className="review-stars" aria-hidden="true">★★★★★</div>
+                  <p>“{r.quote}”</p>
+                  <div className="review-who font-typewriter">{r.who}</div>
                 </div>
               </Reveal>
             ))}
@@ -218,8 +230,8 @@ export default async function HomePage() {
 
           <Reveal className="noir-final">
             <ConfidentialStamp variant="TOP SECRET" rotate={-6} />
-            <h2 className="font-editorial">El expediente 89-1027-H lleva 36 años cerrado.</h2>
-            <p className="font-typewriter">Ustedes lo reabren hoy.</p>
+            <h2 className="font-editorial">Monterrey, 1989. <em>Un culpable.</em> Una sola noche.</h2>
+            <p className="font-typewriter">El expediente está sobre la mesa · ustedes deciden cómo termina.</p>
             <Link className="noir-btn primary lg" href="/registro">Crear cuenta y empezar</Link>
           </Reveal>
         </div>
