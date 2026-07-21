@@ -8,11 +8,11 @@ type Item =
   | { type: 'card'; title: string; sub: string; t: string };
 
 const SCRIPT: Item[] = [
-  { type: 'text', html: 'Detective. Habla el Comandante. Reabrimos el expediente <b>89-1027-H</b>.', t: '02:49' },
+  { type: 'text', html: 'Detective. Habla el Comandante. Tenemos el expediente <b>89-1027-H</b> sobre la mesa.', t: '02:49' },
   { type: 'voice', meta: '0:48', t: '02:49' },
   {
     type: 'text',
-    html: 'Rodrigo Salazar, locutor de Radio Norte. Su última transmisión cortó a las <b>02:49</b>. La Fiscalía archivó el caso. Nosotros no.',
+    html: 'Rodrigo Salazar, locutor de Radio Norte. Su última transmisión cortó a las <b>02:49</b>. Tienen hasta el amanecer para saber quién lo calló.',
     t: '02:50',
   },
   { type: 'card', title: 'Parte informativo', sub: 'Documento · folio 89-1027-H', t: '02:50' },

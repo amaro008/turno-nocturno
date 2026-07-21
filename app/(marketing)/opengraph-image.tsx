@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'Turno Nocturno — Reabre el caso';
+export const alt = 'Turno Nocturno — Juego de misterio criminal';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -26,7 +26,7 @@ export default function OgImage() {
           Juego de misterio conducido por IA
         </div>
         <div style={{ display: 'flex', fontSize: 82, fontWeight: 800, lineHeight: 1.02, marginTop: 24, maxWidth: 900 }}>
-          Reabre casos. Encuentra al culpable.
+          Sigue las pistas. Encuentra al culpable.
         </div>
         <div style={{ display: 'flex', fontSize: 34, color: '#a7b0bc', marginTop: 28 }}>
           Turno Nocturno · una noche, una mesa, el reloj en contra

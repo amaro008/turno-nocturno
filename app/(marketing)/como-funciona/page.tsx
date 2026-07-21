@@ -11,7 +11,7 @@ const FAQ = [
   { q: '¿Necesito saber jugar juegos de mesa?', a: 'No. Si sabes usar una app de mensajería, ya sabes jugar. El Comandante te guía en todo momento.' },
   { q: '¿Cuántas personas se necesitan?', a: 'De 2 a 6. Una sola persona opera la pantalla compartida y el resto investiga en voz alta.' },
   { q: '¿Cuánto dura una sesión?', a: 'Entre 2 y 3 horas. Puedes pausar y retomar: tienes hasta 24 horas desde que activas para completarlo.' },
-  { q: '¿Puedo volver a jugar el mismo caso?', a: 'Sí. El culpable se sortea al activar, así que cada partida puede tener un desenlace distinto. Es imposible spoilear.' },
+  { q: '¿Habrá más casos?', a: 'Sí. Estamos sumando nuevos expedientes, cada uno ambientado en una época distinta, con su propia ciudad y su propio crimen.' },
   { q: '¿Cómo obtengo mi código?', a: 'En el piloto entregamos los códigos a mano. Crea tu cuenta, elige tu caso y te lo enviamos por correo.' },
   { q: '¿Necesito instalar algo?', a: 'No. Todo corre en el navegador, en tu compu o tu tele. Solo necesitas buen internet.' },
 ];
@@ -25,11 +25,11 @@ export default function ComoFuncionaPage() {
         <div className="wrap prose-block">
           <span className="kicker">Cómo funciona</span>
           <h1 style={{ fontSize: 'clamp(30px,5vw,46px)', margin: '14px 0 6px', letterSpacing: '-0.02em' }}>
-            Una noche. Un caso archivado. Tu mesa contra el reloj.
+            Una noche. Un caso. Tu mesa contra el reloj.
           </h1>
           <p style={{ fontSize: 18, color: 'var(--ink-2)' }}>
-            Turno Nocturno convierte tu sala en una sala de investigación. Reabren un expediente que
-            la Fiscalía prefirió olvidar y tienen hasta que el reloj llegue a cero para nombrar al
+            Turno Nocturno convierte tu sala en una sala de investigación. Abren un expediente
+            ambientado en otra época y tienen hasta que el reloj llegue a cero para nombrar al
             culpable, explicar cómo lo hizo y por qué.
           </p>
 
@@ -40,9 +40,9 @@ export default function ComoFuncionaPage() {
           <h2>1. El Comandante te contacta</h2>
           <p>
             Apenas activas la sesión, un Comandante —una IA que conduce el caso en vivo— te escribe
-            por chat, como si fuera mensajería. Te entrega el expediente, te manda notas de voz y
-            suelta evidencia poco a poco. Puedes interrogarlo, pedirle pistas o exigirle una prueba.
-            Nunca te dará la respuesta: su trabajo es abrirte el archivo, no resolver el caso por ti.
+            por chat, como si fuera mensajería. Te entrega el expediente, te manda notas de voz y va
+            liberando evidencia conforme avanza la noche. Puedes consultarlo y pedirle pistas, pero
+            nunca te dará la respuesta: su trabajo es abrirte el archivo, no resolver el caso por ti.
           </p>
 
           <h2>2. Investigan en equipo</h2>
@@ -55,8 +55,8 @@ export default function ComoFuncionaPage() {
           <h2>3. Entregan su veredicto</h2>
           <p>
             Cuando estén listos —o cuando el reloj los obligue— cierran el caso: quién, cómo y por
-            qué. El Comandante evalúa su teoría y narra la resolución. Aciertan… o el expediente
-            vuelve a archivarse.
+            qué. El Comandante evalúa su teoría y narra la resolución. Aciertan… o dejan que el
+            culpable se salga con la suya.
           </p>
         </div>
       </main>
@@ -69,7 +69,7 @@ export default function ComoFuncionaPage() {
             <h2 style={{ fontSize: 'clamp(24px,3.4vw,34px)', margin: '12px 0 10px' }}>Así te escribe el Comandante.</h2>
             <p style={{ color: 'var(--ink-2)', fontSize: 16, lineHeight: 1.6 }}>
               Texto, notas de voz y tarjetas de evidencia dentro del chat. Una interfaz que ya
-              conoces, con la tensión de una sala de interrogatorios.
+              conoces, con la tensión de una sala de investigación.
             </p>
           </div>
           <HeroTeaser />

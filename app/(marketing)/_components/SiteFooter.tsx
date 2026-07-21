@@ -5,7 +5,7 @@ export default function SiteFooter() {
     <footer className="noir-footer">
       <div className="wrap noir-footer-inner">
         <div className="badge-plate">
-          <span className="plate-top font-typewriter">Departamento de Casos Archivados</span>
+          <span className="plate-top font-typewriter">Departamento de Investigación Criminal</span>
           <span className="plate-title font-editorial">Turno Nocturno</span>
           <span className="plate-sub font-typewriter">Placa 89 · turno de la madrugada</span>
         </div>
