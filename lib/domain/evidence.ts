@@ -27,7 +27,9 @@ export interface EvidenceBase {
 export interface DocumentContent { body_md: string | null; image_path: string | null; transcript: string | null; }
 export interface PhotoContent { image_path: string | null; caption: string | null; metadata: Record<string, unknown>; }
 export interface AudioContent { audio_path: string | null; duration_seconds: number | null; transcript: string | null; speakers: unknown[]; }
-export interface VideoContent { video_path: string | null; duration_seconds: number | null; transcript: string | null; timestamps: unknown[]; frames_path: string | null; }
+/** Un fotograma de la secuencia (foto fija con hora), no un archivo de video real. */
+export interface VideoFrame { time: string; caption: string; image_path: string | null; }
+export interface VideoContent { frames: VideoFrame[]; transcript: string | null; }
 export interface TestimonyContent { witness_name: string | null; body_md: string | null; audio_path: string | null; }
 export interface RecordContent { record_type: string | null; body_md: string | null; image_path: string | null; structured_data: Record<string, unknown>; }
 
@@ -63,7 +65,7 @@ export function evidenceMediaPath(e: EvidenceFull): string | null {
     case 'document': return e.content.image_path;
     case 'photo': return e.content.image_path;
     case 'audio': return e.content.audio_path;
-    case 'video': return e.content.video_path;
+    case 'video': return e.content.frames[0]?.image_path ?? null;
     case 'testimony': return e.content.audio_path;
     case 'record': return e.content.image_path;
   }

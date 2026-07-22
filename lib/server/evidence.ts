@@ -12,6 +12,7 @@ import {
   type EvidenceBase,
   type EvidenceFull,
   type EvidenceType,
+  type VideoFrame,
 } from '@/lib/domain';
 
 const BASE_COLS =
@@ -60,7 +61,7 @@ export function assembleOne(base: EvidenceBase, content: Record<string, unknown>
     case 'audio':
       return { ...base, type: 'audio', content: { audio_path: str(c.audio_path), duration_seconds: num(c.duration_seconds), transcript: str(c.transcript), speakers: arr(c.speakers) } };
     case 'video':
-      return { ...base, type: 'video', content: { video_path: str(c.video_path), duration_seconds: num(c.duration_seconds), transcript: str(c.transcript), timestamps: arr(c.timestamps), frames_path: str(c.frames_path) } };
+      return { ...base, type: 'video', content: { frames: framesArr(c.frames), transcript: str(c.transcript) } };
     case 'testimony':
       return { ...base, type: 'testimony', content: { witness_name: str(c.witness_name), body_md: str(c.body_md), audio_path: str(c.audio_path) } };
     case 'record':
@@ -72,6 +73,17 @@ const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 const num = (v: unknown): number | null => (typeof v === 'number' ? v : null);
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+const framesArr = (v: unknown): VideoFrame[] =>
+  Array.isArray(v)
+    ? v.map((f) => {
+        const r = (f ?? {}) as Record<string, unknown>;
+        return {
+          time: typeof r.time === 'string' ? r.time : '',
+          caption: typeof r.caption === 'string' ? r.caption : '',
+          image_path: typeof r.image_path === 'string' ? r.image_path : null,
+        };
+      })
+    : [];
 
 // -------------------------------------------------------------- Adaptador ---
 // Forma "legacy" que consume la consola actual (se reemplaza en la fase de
@@ -92,6 +104,8 @@ export interface LegacyPublicEvidence {
   caption: string | null;
   witness_name: string | null;
   record_type: string | null;
+  // Video: secuencia de fotogramas (fotos fijas con hora) con URL firmada c/u.
+  frames: { time: string; caption: string | null; mediaUrl: string | null }[] | null;
 }
 
 function legacyKind(e: EvidenceFull): 'audio' | 'video' | 'document' {
@@ -104,6 +118,16 @@ function legacyKind(e: EvidenceFull): 'audio' | 'video' | 'document' {
 /** Proyecta EvidenceFull a la forma legacy, firmando la URL de media (10 min). */
 export async function toLegacyPublic(e: EvidenceFull): Promise<LegacyPublicEvidence> {
   const mediaPath = evidenceMediaPath(e);
+  const frames =
+    e.type === 'video'
+      ? await Promise.all(
+          e.content.frames.map(async (fr) => ({
+            time: fr.time,
+            caption: fr.caption || null,
+            mediaUrl: await signedUrl(fr.image_path, SESSION_MEDIA_TTL),
+          })),
+        )
+      : null;
   return {
     id: e.id,
     kind: legacyKind(e),
@@ -117,16 +141,17 @@ export async function toLegacyPublic(e: EvidenceFull): Promise<LegacyPublicEvide
     caption: e.type === 'photo' ? e.content.caption : null,
     witness_name: e.type === 'testimony' ? e.content.witness_name : null,
     record_type: e.type === 'record' ? e.content.record_type : null,
+    frames,
   };
 }
 
 // ----------------------------------------------------------------- Admin ----
 export interface EvidenceContentInput {
   body_md?: string | null; transcript?: string | null; image_path?: string | null;
-  audio_path?: string | null; video_path?: string | null; caption?: string | null;
+  audio_path?: string | null; caption?: string | null;
   witness_name?: string | null; record_type?: string | null; duration_seconds?: number | null;
-  frames_path?: string | null; metadata?: Record<string, unknown>; speakers?: unknown[];
-  timestamps?: unknown[]; structured_data?: Record<string, unknown>;
+  frames?: { time?: string; caption?: string; image_path?: string | null }[]; metadata?: Record<string, unknown>; speakers?: unknown[];
+  structured_data?: Record<string, unknown>;
 }
 
 /** Reemplaza (upsert) la fila de contenido según el tipo. */
@@ -137,7 +162,7 @@ export async function upsertEvidenceContent(evidenceId: string, type: EvidenceTy
     case 'document': row = { body_md: c.body_md ?? null, image_path: c.image_path ?? null, transcript: c.transcript ?? null }; break;
     case 'photo': row = { image_path: c.image_path ?? null, caption: c.caption ?? null, metadata: c.metadata ?? {} }; break;
     case 'audio': row = { audio_path: c.audio_path ?? null, duration_seconds: c.duration_seconds ?? null, transcript: c.transcript ?? null, speakers: c.speakers ?? [] }; break;
-    case 'video': row = { video_path: c.video_path ?? null, duration_seconds: c.duration_seconds ?? null, transcript: c.transcript ?? null, timestamps: c.timestamps ?? [], frames_path: c.frames_path ?? null }; break;
+    case 'video': row = { frames: (c.frames ?? []).map((f): VideoFrame => ({ time: f.time ?? '', caption: f.caption ?? '', image_path: f.image_path ?? null })), transcript: c.transcript ?? null }; break;
     case 'testimony': row = { witness_name: c.witness_name ?? null, body_md: c.body_md ?? null, audio_path: c.audio_path ?? null }; break;
     case 'record': row = { record_type: c.record_type ?? null, body_md: c.body_md ?? null, image_path: c.image_path ?? null, structured_data: c.structured_data ?? {} }; break;
   }

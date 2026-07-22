@@ -111,15 +111,22 @@ export const evidenceContentSchema = z
     transcript: z.string().nullable().optional(),
     image_path: z.string().nullable().optional(),
     audio_path: z.string().nullable().optional(),
-    video_path: z.string().nullable().optional(),
     caption: z.string().nullable().optional(),
     witness_name: z.string().max(160).nullable().optional(),
     record_type: z.string().max(160).nullable().optional(),
     duration_seconds: z.coerce.number().int().min(0).nullable().optional(),
-    frames_path: z.string().nullable().optional(),
+    // Video: secuencia de fotogramas (fotos fijas con hora), no un archivo real.
+    frames: z
+      .array(
+        z.object({
+          time: z.string().max(40).default(''),
+          caption: z.string().max(300).default(''),
+          image_path: z.string().nullable().optional(),
+        }),
+      )
+      .optional(),
     metadata: z.record(z.any()).optional(),
     speakers: z.array(z.any()).optional(),
-    timestamps: z.array(z.any()).optional(),
     structured_data: z.record(z.any()).optional(),
   })
   .default({});

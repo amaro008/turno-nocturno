@@ -32,14 +32,17 @@ const TYPE_TABS: { value: EvidenceType; label: string; prefix: string }[] = [
   { value: 'record', label: 'Registros', prefix: 'REG' },
 ];
 
+interface DraftFrame { time: string; caption: string; image_path: string | null; }
+
 interface Draft {
   id?: string; code?: string; title?: string; type?: EvidenceType;
   scope?: 'shared' | 'variant'; variant_id?: string | null;
   public_description?: string; admin_notes?: string; is_report?: boolean;
   initial?: boolean; unlocked_at_minute?: number | null; unlocked_by_event_id?: string | null;
   body_md?: string | null; transcript?: string | null; image_path?: string | null;
-  audio_path?: string | null; video_path?: string | null; caption?: string | null;
+  audio_path?: string | null; caption?: string | null;
   witness_name?: string | null; record_type?: string | null;
+  frames?: DraftFrame[];
 }
 
 const VERDICT_WORDS = ['asesino', 'asesina', 'culpable', 'mató', 'homicida', 'lo hizo', 'responsable'];
@@ -54,7 +57,7 @@ function toDraft(e: EvidenceFull): Draft {
     case 'document': return { ...b, body_md: e.content.body_md, transcript: e.content.transcript, image_path: e.content.image_path };
     case 'photo': return { ...b, image_path: e.content.image_path, caption: e.content.caption };
     case 'audio': return { ...b, audio_path: e.content.audio_path, transcript: e.content.transcript };
-    case 'video': return { ...b, video_path: e.content.video_path, transcript: e.content.transcript };
+    case 'video': return { ...b, frames: e.content.frames, transcript: e.content.transcript };
     case 'testimony': return { ...b, witness_name: e.content.witness_name, body_md: e.content.body_md, audio_path: e.content.audio_path };
     case 'record': return { ...b, record_type: e.content.record_type, body_md: e.content.body_md, image_path: e.content.image_path };
   }
@@ -66,7 +69,7 @@ function toPayload(f: Draft) {
   if (t === 'document') Object.assign(content, { body_md: f.body_md, transcript: f.transcript, image_path: f.image_path });
   if (t === 'photo') Object.assign(content, { image_path: f.image_path, caption: f.caption });
   if (t === 'audio') Object.assign(content, { audio_path: f.audio_path, transcript: f.transcript });
-  if (t === 'video') Object.assign(content, { video_path: f.video_path, transcript: f.transcript });
+  if (t === 'video') Object.assign(content, { frames: (f.frames ?? []).map((fr) => ({ time: fr.time ?? '', caption: fr.caption ?? '', image_path: fr.image_path ?? null })), transcript: f.transcript });
   if (t === 'testimony') Object.assign(content, { witness_name: f.witness_name, body_md: f.body_md, audio_path: f.audio_path });
   if (t === 'record') Object.assign(content, { record_type: f.record_type, body_md: f.body_md, image_path: f.image_path });
   return {
@@ -161,6 +164,7 @@ export default function EvidenciasTab({
                   <span className="ev-mrow-desc">{e.public_description || '— sin descripción pública —'}</span>
                 </span>
                 <span className="ev-mrow-flags mono">
+                  {e.type === 'video' ? `${e.content.frames.length} fotograma${e.content.frames.length === 1 ? '' : 's'} · ` : ''}
                   {e.initial ? 'inicial' : e.unlocked_at_minute != null ? `min ${e.unlocked_at_minute}` : e.unlocked_by_event_id ? 'evento' : '—'}
                   {e.scope === 'variant' ? ' · var' : ''}
                 </span>
@@ -200,8 +204,8 @@ function EvidenceSheet({
   const type = f.type ?? 'document';
 
   const mediaField: keyof Draft | null =
-    type === 'audio' || type === 'testimony' ? 'audio_path' : type === 'video' ? 'video_path' : type === 'photo' || type === 'document' || type === 'record' ? 'image_path' : null;
-  const mediaKind = type === 'audio' || type === 'testimony' ? 'audio' : type === 'video' ? 'video' : 'image';
+    type === 'audio' || type === 'testimony' ? 'audio_path' : type === 'photo' || type === 'document' || type === 'record' ? 'image_path' : null;
+  const mediaKind = type === 'audio' || type === 'testimony' ? 'audio' : 'image';
 
   // Validador de descripción pública.
   const descLow = (f.public_description ?? '').toLowerCase();
@@ -310,12 +314,16 @@ function EvidenceSheet({
           <div className="full"><label className="label">Pie de foto</label>
             <input className="input" value={f.caption ?? ''} onChange={(e) => set('caption', e.target.value)} /></div>
         )}
-        {(type === 'audio' || type === 'video') && (
+        {type === 'audio' && (
           <div className="full"><label className="label">Transcripción</label>
             <textarea className="input" value={f.transcript ?? ''} onChange={(e) => set('transcript', e.target.value)} /></div>
         )}
+        {type === 'video' && (
+          <div className="full"><label className="label">Contexto (opcional)</label>
+            <textarea className="input" placeholder="Nota breve para el jugador, se muestra bajo la secuencia de fotogramas." value={f.transcript ?? ''} onChange={(e) => set('transcript', e.target.value)} /></div>
+        )}
 
-        {f.scope === 'variant' && mediaField && (
+        {f.scope === 'variant' && (mediaField || type === 'video') && (
           <div className="full up-warn ev-variant-warn">
             ⚠ Evidencia de <b>variante</b>: el archivo debe verse <b>idéntico</b> al de las
             demás variantes de esta misma pieza. Solo debe cambiar el detalle específico de la
@@ -333,9 +341,13 @@ function EvidenceSheet({
               category="evidencia"
               value={(f[mediaField] as string | null) ?? null}
               onUploaded={(path) => set(mediaField, path)}
-              label={mediaKind === 'audio' ? 'Archivo de audio' : mediaKind === 'video' ? 'Archivo de video' : 'Imagen'}
+              label={mediaKind === 'audio' ? 'Archivo de audio' : 'Imagen'}
             />
           </div>
+        )}
+
+        {type === 'video' && (
+          <VideoFrameEditor slug={slug} frames={f.frames ?? []} onChange={(frames) => set('frames', frames)} />
         )}
 
         <div className="full">
@@ -344,5 +356,86 @@ function EvidenceSheet({
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * Editor de la secuencia de fotogramas de una evidencia "video". Cada
+ * fotograma es una foto fija con su hora y una breve descripción — el
+ * jugador los recorre uno por uno, como si repasara el material de cámara.
+ * Evita depender de generar video real con IA.
+ */
+function VideoFrameEditor({
+  slug,
+  frames,
+  onChange,
+}: {
+  slug: string;
+  frames: DraftFrame[];
+  onChange: (frames: DraftFrame[]) => void;
+}) {
+  function update(i: number, patch: Partial<DraftFrame>) {
+    onChange(frames.map((fr, idx) => (idx === i ? { ...fr, ...patch } : fr)));
+  }
+  function remove(i: number) {
+    onChange(frames.filter((_, idx) => idx !== i));
+  }
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= frames.length) return;
+    const next = [...frames];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  }
+  function add() {
+    onChange([...frames, { time: '', caption: '', image_path: null }]);
+  }
+
+  return (
+    <div className="full frame-editor">
+      <label className="label">Fotogramas (secuencia con hora, en vez de video real)</label>
+      <div className="field-hint" style={{ marginBottom: 10 }}>
+        Cada fotograma es una foto fija con su hora y una breve descripción del momento
+        (ej. &ldquo;17:20 · Ricard entra por la puerta principal&rdquo;). El jugador los recorre
+        uno por uno con ← →, como si repasara el material de la cámara.
+      </div>
+
+      {frames.length === 0 && <div className="empty-hint">Sin fotogramas todavía.</div>}
+
+      <div className="frame-rows">
+        {frames.map((fr, i) => (
+          <div key={i} className="frame-row">
+            <div className="frame-row-head">
+              <span className="mono frame-row-n">#{i + 1}</span>
+              <input
+                className="input mono frame-row-time"
+                placeholder="17:20"
+                value={fr.time}
+                onChange={(e) => update(i, { time: e.target.value })}
+              />
+              <button type="button" className="btn ghost" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Mover antes">↑</button>
+              <button type="button" className="btn ghost" onClick={() => move(i, 1)} disabled={i === frames.length - 1} aria-label="Mover después">↓</button>
+              <button type="button" className="btn ghost" style={{ color: 'var(--alert)' }} onClick={() => remove(i)}>Eliminar</button>
+            </div>
+            <input
+              className="input"
+              placeholder="Qué se ve en este momento"
+              value={fr.caption}
+              onChange={(e) => update(i, { caption: e.target.value })}
+            />
+            <MediaUploader
+              caseSlug={slug}
+              kind="image"
+              category="evidencia"
+              value={fr.image_path}
+              onUploaded={(path) => update(i, { image_path: path })}
+              label="Imagen del fotograma"
+            />
+          </div>
+        ))}
+      </div>
+
+      <button type="button" className="btn ghost add-btn" onClick={add}>+ Agregar fotograma</button>
+    </div>
   );
 }

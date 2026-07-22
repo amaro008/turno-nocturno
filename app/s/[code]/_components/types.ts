@@ -15,6 +15,7 @@ export interface PublicEvidence {
   caption: string | null;
   witness_name: string | null;
   record_type: string | null;
+  frames: { time: string; caption: string | null; mediaUrl: string | null }[] | null;
 }
 
 export type EvType = 'document' | 'photo' | 'audio' | 'video' | 'testimony' | 'record';

@@ -132,6 +132,7 @@ export type {
   PhotoContent,
   AudioContent,
   VideoContent,
+  VideoFrame,
   TestimonyContent,
   RecordContent,
 } from './evidence';
