@@ -49,7 +49,7 @@ export default function SessionApp({ code }: { code: string }) {
   const threadRef = useRef<HTMLDivElement>(null);
 
   const reduce = useReducedMotion();
-  const { badges, toasts, acknowledge, dismissToast, muted, setMuted } = useNewEvidenceNotification(state?.evidence ?? [], tab);
+  const { badges, toasts, acknowledge, dismissToast, muted, setMuted } = useNewEvidenceNotification(state?.evidence ?? null, tab, !resolution);
 
   const fetchState = useCallback(async () => {
     const res = await fetch(`/api/sessions/${code}/state`, { cache: 'no-store' });
@@ -68,6 +68,8 @@ export default function SessionApp({ code }: { code: string }) {
     return () => clearInterval(id);
   }, []);
   useEffect(() => {
+    // Caso ya resuelto: no hay más eventos que disparar ni evidencia que llegar.
+    if (resolution) return;
     const id = setInterval(async () => {
       try {
         const res = await fetch(`/api/sessions/${code}/tick`, { method: 'POST' });
@@ -77,7 +79,7 @@ export default function SessionApp({ code }: { code: string }) {
       } catch { /* silencio */ }
     }, 30000);
     return () => clearInterval(id);
-  }, [code, fetchState]);
+  }, [code, fetchState, resolution]);
   useEffect(() => {
     const el = threadRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -294,15 +296,17 @@ export default function SessionApp({ code }: { code: string }) {
         {!resolution && <button className="btn primary sfoot-close" onClick={() => setVerdictOpen(true)}>Cerrar el caso</button>}
       </footer>
 
-      {/* Toasts */}
-      <div className="toasts">
-        {toasts.map((t) => (
-          <button className="toast" key={t.id} onClick={() => { switchTab(t.tab); dismissToast(t.id); }}>
-            <span className="toast-dot" />
-            Nueva evidencia recibida: <b>{t.title}</b>
-          </button>
-        ))}
-      </div>
+      {/* Toasts — nunca sobre la pantalla de resultado */}
+      {!resolution && (
+        <div className="toasts">
+          {toasts.map((t) => (
+            <button className="toast" key={t.id} onClick={() => { switchTab(t.tab); dismissToast(t.id); }}>
+              <span className="toast-dot" />
+              Nueva evidencia recibida: <b>{t.title}</b>
+            </button>
+          ))}
+        </div>
+      )}
 
       {verdictOpen && <VerdictModal suspects={state.suspects.map((s) => s.full_name)} onClose={() => setVerdictOpen(false)} onSubmit={submitVerdict} />}
       {resolution && <ResolutionScreen r={resolution} />}

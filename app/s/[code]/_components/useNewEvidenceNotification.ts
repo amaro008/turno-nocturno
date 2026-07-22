@@ -42,8 +42,17 @@ function playChime() {
 
 /**
  * Detecta evidencia nueva (abierta) y expone badges por tab, toasts, chime y mute.
+ *
+ * `evidence` debe ser `null` mientras el estado inicial de la sesión aún no
+ * llega del servidor — así la base de comparación se fija con la primera
+ * lista REAL y no con el `[]` transitorio antes del primer fetch (si no, esa
+ * lista vacía se toma como base y toda la evidencia ya desbloqueada dispara
+ * un toast de golpe en la primera carga).
+ *
+ * `enabled=false` (p. ej. caso ya resuelto) apaga la detección por completo:
+ * no hay más avisos que mostrar sobre la pantalla de resultado.
  */
-export function useNewEvidenceNotification(evidence: PublicEvidence[], activeTab: ExpTab) {
+export function useNewEvidenceNotification(evidence: PublicEvidence[] | null, activeTab: ExpTab, enabled = true) {
   const [badges, setBadges] = useState<Record<string, number>>({});
   const [toasts, setToasts] = useState<EvidenceToast[]>([]);
   const [muted, setMuted] = useState(false);
@@ -54,6 +63,7 @@ export function useNewEvidenceNotification(evidence: PublicEvidence[], activeTab
   mutedRef.current = muted;
 
   useEffect(() => {
+    if (!enabled || evidence === null) return;
     const ids = new Set(evidence.map((e) => e.id));
     if (prevIds.current === null) { prevIds.current = ids; return; }
     const added = evidence.filter((e) => !prevIds.current!.has(e.id));
@@ -70,7 +80,7 @@ export function useNewEvidenceNotification(evidence: PublicEvidence[], activeTab
     });
     setToasts((t) => [...t, ...added.map((e) => ({ id: `${e.id}-${Date.now()}`, title: e.title, tab: tabForType(e.type) }))]);
     if (!mutedRef.current) playChime();
-  }, [evidence]);
+  }, [evidence, enabled]);
 
   useEffect(() => {
     if (toasts.length === 0) return;
