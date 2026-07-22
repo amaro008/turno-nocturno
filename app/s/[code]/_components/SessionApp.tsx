@@ -361,7 +361,24 @@ function MessageRow({ m }: { m: Msg }) {
         {m.kind === 'evidence_card' && m.evidence ? (
           <EvidenceCard ev={m.evidence} />
         ) : m.kind === 'voice' ? (
-          <div className="bubble voice-b"><span className="voice-ic">🎙</span><span className="voice-tx">{m.content}</span></div>
+          <div className="bubble voice-b">
+            <div className="voice-b-row">
+              <span className="voice-ic">🎙</span>
+              <span className="voice-tx">{m.content}</span>
+            </div>
+            {m.voiceUrl ? (
+              <audio
+                className="voice-audio"
+                src={m.voiceUrl}
+                controls
+                controlsList="nodownload noremoteplayback"
+                preload="none"
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            ) : m.voice_path ? (
+              <span className="voice-unavailable mono">Nota de voz no disponible.</span>
+            ) : null}
+          </div>
         ) : (
           <div className="bubble">{m.content}</div>
         )}

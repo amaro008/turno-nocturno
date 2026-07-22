@@ -51,6 +51,7 @@ export interface Msg {
   kind: 'text' | 'voice' | 'evidence_card' | 'system';
   content: string;
   voice_path: string | null;
+  voiceUrl: string | null;
   evidence: PublicEvidence | null;
 }
 

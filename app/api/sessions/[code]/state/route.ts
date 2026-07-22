@@ -41,18 +41,22 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
   const idByCode = new Map(openEvidence.map((e) => [e.code, e.id]));
   const evById = new Map(evidence.map((e) => [e.id, e]));
 
-  const messages = (rawMessages ?? []).map((m) => {
-    const evId = m.evidence_code ? idByCode.get(m.evidence_code) : null;
-    return {
-      id: m.id,
-      at: m.at,
-      role: m.role,
-      kind: m.kind,
-      content: m.content,
-      voice_path: m.voice_path,
-      evidence: evId ? evById.get(evId) ?? null : null,
-    };
-  });
+  // Notas de voz del Comandante → URL firmada (bucket privado, TTL de sesión).
+  const messages = await Promise.all(
+    (rawMessages ?? []).map(async (m) => {
+      const evId = m.evidence_code ? idByCode.get(m.evidence_code) : null;
+      return {
+        id: m.id,
+        at: m.at,
+        role: m.role,
+        kind: m.kind,
+        content: m.content,
+        voice_path: m.voice_path,
+        voiceUrl: m.voice_path ? await signedUrl(m.voice_path, SESSION_MEDIA_TTL) : null,
+        evidence: evId ? evById.get(evId) ?? null : null,
+      };
+    }),
+  );
 
   // Ficha PÚBLICA de sospechosos (con foto firmada). Neutra, igual en toda variante.
   // La víctima no aparece como sospechoso acusable.
