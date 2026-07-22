@@ -45,27 +45,27 @@ export const suspectSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().min(1, 'Falta el nombre').max(120),
   age: z.coerce.number().int().min(1).max(120).nullable().optional(),
-  occupation: z.string().max(120).nullable().optional(),
-  relationship_to_victim: z.string().max(200).nullable().optional(),
+  occupation: z.string().max(400).nullable().optional(),
+  relationship_to_victim: z.string().max(600).nullable().optional(),
   photo_path: z.string().nullable().optional(),
   sort_order: z.coerce.number().int().default(0),
   // Ficha pública neutra
-  physical_description: z.string().max(2000).nullable().optional(),
-  distinctive_features: z.string().max(2000).nullable().optional(),
-  accent_or_speech: z.string().max(500).nullable().optional(),
-  typical_attire: z.string().max(500).nullable().optional(),
+  physical_description: z.string().max(3000).nullable().optional(),
+  distinctive_features: z.string().max(3000).nullable().optional(),
+  accent_or_speech: z.string().max(1000).nullable().optional(),
+  typical_attire: z.string().max(1000).nullable().optional(),
   is_victim: z.boolean().default(false),
   // Admin-only
-  internal_notes: z.string().max(4000).nullable().optional(),
-  image_prompt: z.string().max(4000).nullable().optional(),
+  internal_notes: z.string().max(12000).nullable().optional(),
+  image_prompt: z.string().max(6000).nullable().optional(),
   // Data por variante (se upserta junto con el sospechoso)
   variant_data: z
     .array(
       z.object({
         variant_id: z.string().uuid(),
-        alibi_declared: z.string().max(2000).nullable().optional(),
-        motive_apparent: z.string().max(2000).nullable().optional(),
-        variant_specific_notes: z.string().max(4000).nullable().optional(),
+        alibi_declared: z.string().max(3000).nullable().optional(),
+        motive_apparent: z.string().max(3000).nullable().optional(),
+        variant_specific_notes: z.string().max(8000).nullable().optional(),
         is_culprit_in_variant: z.boolean().default(false),
       }),
     )
