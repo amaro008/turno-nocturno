@@ -35,7 +35,7 @@ export async function createCode(formData: FormData) {
     redirect('/admin/codigos/nuevo?error=' + encodeURIComponent('Ese usuario no existe. Pídele que se registre primero.'));
   }
 
-  const { data: caseRow } = await svc.from('cases').select('id, title, active').eq('id', caseId).maybeSingle();
+  const { data: caseRow } = await svc.from('cases').select('id, title, active, city, era_year').eq('id', caseId).maybeSingle();
   if (!caseRow || !caseRow.active) {
     redirect('/admin/codigos/nuevo?error=' + encodeURIComponent('Ese caso no está activo.'));
   }
@@ -69,7 +69,7 @@ export async function createCode(formData: FormData) {
 
   let emailNote = '';
   if (sendNow) {
-    const r = await sendCodeEmail({ to: user!.email, fullName: user!.full_name || 'detective', caseTitle: caseRow!.title, code });
+    const r = await sendCodeEmail({ to: user!.email, fullName: user!.full_name || 'detective', caseTitle: caseRow!.title, city: caseRow!.city, eraYear: caseRow!.era_year, code });
     emailNote = r.sent ? ' Email enviado.' : ' (Email no configurado: copia el código y envíalo tú).';
   }
 
@@ -83,17 +83,19 @@ export async function resendCode(formData: FormData) {
   const admin = await requireAdmin();
   const id = String(formData.get('id') ?? '');
   const svc = createServiceClient();
-  const { data: code } = await svc.from('access_codes').select('*, cases(title), profiles(full_name, email)').eq('id', id).maybeSingle();
+  const { data: code } = await svc.from('access_codes').select('*, cases(title, city, era_year), profiles(full_name, email)').eq('id', id).maybeSingle();
   if (!code) redirect('/admin/codigos?error=' + encodeURIComponent('Código no encontrado.'));
 
   const nowIso = new Date().toISOString();
   await svc.from('access_codes').update({ status: 'sent', sent_at: nowIso }).eq('id', id);
 
-  const rel = code as unknown as { code: string; cases: { title: string }; profiles: { full_name: string; email: string } };
+  const rel = code as unknown as { code: string; cases: { title: string; city: string | null; era_year: number | null }; profiles: { full_name: string; email: string } };
   const r = await sendCodeEmail({
     to: rel.profiles.email,
     fullName: rel.profiles.full_name || 'detective',
     caseTitle: rel.cases.title,
+    city: rel.cases.city,
+    eraYear: rel.cases.era_year,
     code: rel.code,
     resend: true,
   });
