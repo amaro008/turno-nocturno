@@ -152,10 +152,10 @@ export function buildHtml(input: CodeEmailInput): string {
                   <td style="padding:22px 30px 4px;">
                     <p style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6;color:${C.text};">Detective ${name},</p>
                     <p style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:${C.muted};">
-                      Se te ha asignado un caso. Un Comandante te guiará por radio mientras tú y tu equipo repasáis pruebas, escucháis testimonios y apuntáis quién miente. Tenéis el tiempo de un turno para dar con la verdad.
+                      Se te asignó un caso. Un Comandante te guiará por radio mientras tú y tu equipo revisan pruebas, escuchan testimonios y anotan quién miente. Tienen el tiempo de un turno para dar con la verdad.
                     </p>
                     <p style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:${C.muted};">
-                      El reloj no corre todavía: empieza en el momento en que actives tu código. Reúne a quien vaya a jugar contigo antes de entrar.
+                      El reloj todavía no corre: arranca en el momento en que actives tu código. Junta a quienes vayan a jugar contigo antes de entrar.
                     </p>
                   </td>
                 </tr>
@@ -241,9 +241,9 @@ function buildText(input: CodeEmailInput): string {
     '',
     `Detective ${input.fullName || 'detective'},`,
     '',
-    `Se te ha asignado un caso: «${input.caseTitle}»${loc ? ` (${loc})` : ''}.`,
-    'Un Comandante te guiará por radio mientras tú y tu equipo repasáis pruebas y descubrís quién miente.',
-    'El reloj empieza cuando actives tu código: reúne a tu equipo antes de entrar.',
+    `Se te asignó un caso: «${input.caseTitle}»${loc ? ` (${loc})` : ''}.`,
+    'Un Comandante te guiará por radio mientras tú y tu equipo revisan pruebas y descubren quién miente.',
+    'El reloj arranca cuando actives tu código: junta a tu equipo antes de entrar.',
     '',
     `TU CÓDIGO DE ACCESO: ${input.code}`,
     '',
