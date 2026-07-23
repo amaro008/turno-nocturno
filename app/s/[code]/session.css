@@ -9,6 +9,14 @@
   background: radial-gradient(120% 80% at 50% -10%, rgba(233, 166, 60, 0.05), transparent 60%), var(--night);
   overflow: hidden;
 }
+/* Filas pinneadas: el `.console-toggle` está oculto en escritorio (display:none),
+   así que sin esto el auto-placement corría la consola a la fila `auto` y el
+   `1fr` se lo quedaba el footer → el marco se encogía según la pestaña activa.
+   Fijar la fila de cada hijo mantiene el alto de la consola constante. */
+.sess > .sbar { grid-row: 1; }
+.sess > .console-toggle { grid-row: 2; }
+.sess > .console { grid-row: 3; min-height: 0; }
+.sess > .sfoot { grid-row: 4; }
 
 /* Toggle chat/expediente — oculto en desktop, visible en tablet vertical y menor */
 .console-toggle { display: none; }
