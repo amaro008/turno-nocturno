@@ -58,7 +58,7 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
       <SiteNav />
 
       <section className="detail-hero">
-        <SafeImg src={c.coverUrl} alt={c.title} className="dh-bg" />
+        <SafeImg src={c.atmosphereUrl} alt={c.title} className="dh-bg" />
         <div className="dh-scrim" />
         <div className="wrap dh-inner">
           <span className="kicker">{c.city} · {c.era_year}</span>
@@ -77,14 +77,6 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
                 {c.synopsis.split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
               </div>
             </section>
-
-            {/* Ambiente del caso (solo si hay imagen propia) */}
-            {c.atmosphereUrl && (
-              <figure className="detail-atmo">
-                <SafeImg src={c.atmosphereUrl} alt="" />
-                <figcaption className="mono">{c.city} · {c.era_year}</figcaption>
-              </figure>
-            )}
 
             {/* Los sospechosos */}
             {suspects.length > 0 && (
