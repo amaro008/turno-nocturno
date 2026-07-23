@@ -35,10 +35,12 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
       svc.from('case_timeline').select('id, payload').eq('case_id', ctx.caseRow.id).eq('action', 'voice'),
     ]);
 
-  // Audio del Comandante EN VIVO: la ruta actual del evento manda; si el evento
-  // ya no existe o no tiene audio, cae al voice_path histórico del mensaje.
-  const liveVoiceByTimeline = new Map<string, string | null>(
-    (voiceTimeline ?? []).map((t) => [t.id as string, ((t.payload as { voice_path?: string } | null)?.voice_path) ?? null]),
+  // Nota de voz del Comandante EN VIVO: el evento actual del timeline manda, tanto
+  // el audio como el texto. Si el evento ya no existe, cae al valor histórico del
+  // mensaje. Así editar el guion/audio en el admin se refleja en toda sesión.
+  type VoicePayload = { voice_path?: string; text?: string; transcript?: string };
+  const liveVoiceByTimeline = new Map<string, VoicePayload>(
+    (voiceTimeline ?? []).map((t) => [t.id as string, (t.payload as VoicePayload | null) ?? {}]),
   );
 
   // Evidencia abierta → forma legacy con URL de media firmada a 10 min (anti-descarga).
@@ -52,17 +54,16 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
   const messages = await Promise.all(
     (rawMessages ?? []).map(async (m) => {
       const evId = m.evidence_code ? idByCode.get(m.evidence_code) : null;
-      // Ruta viva del timeline (si el mensaje está vinculado) o la histórica.
-      const livePath =
-        m.timeline_id && liveVoiceByTimeline.has(m.timeline_id)
-          ? (liveVoiceByTimeline.get(m.timeline_id) ?? m.voice_path)
-          : m.voice_path;
+      // Audio y texto vivos del timeline (si el mensaje está vinculado) o los históricos.
+      const live = m.timeline_id ? liveVoiceByTimeline.get(m.timeline_id) : undefined;
+      const livePath = live ? (live.voice_path ?? m.voice_path) : m.voice_path;
+      const liveContent = live ? (live.text ?? live.transcript ?? m.content) : m.content;
       return {
         id: m.id,
         at: m.at,
         role: m.role,
         kind: m.kind,
-        content: m.content,
+        content: liveContent,
         voice_path: livePath,
         voiceUrl: livePath ? await signedUrl(livePath, SESSION_MEDIA_TTL) : null,
         evidence: evId ? evById.get(evId) ?? null : null,
