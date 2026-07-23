@@ -2,10 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import SiteNav from '../../_components/SiteNav';
 import SiteFooter from '../../_components/SiteFooter';
-import AtmoImage from '@/components/AtmoImage';
+import SafeImg from '@/components/SafeImg';
 import { createServerClient } from '@/lib/server/supabase';
 import { getPublicCase, getPublicSuspects } from '@/lib/server/public-cases';
-import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
@@ -52,8 +51,6 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
   const suspects = suspectsAll.slice(0, SHOWN);
   const extraSuspects = Math.max(0, suspectsAll.length - suspects.length);
 
-  const coverPrimary = c.coverUrl ?? unsplashUrl(`${c.city} ${c.era_year} noir crime scene`, 1600, 700);
-  const coverFallback = picsumUrl(`detail-${c.slug}`, 1600, 700, true);
   const hours = Math.round(c.time_limit_min / 30) / 2;
 
   return (
@@ -61,7 +58,7 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
       <SiteNav />
 
       <section className="detail-hero">
-        <AtmoImage primary={coverPrimary} fallback={coverFallback} alt={c.title} className="dh-bg" />
+        <SafeImg src={c.coverUrl} alt={c.title} className="dh-bg" />
         <div className="dh-scrim" />
         <div className="wrap dh-inner">
           <span className="kicker">{c.city} · {c.era_year}</span>
@@ -81,11 +78,10 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
               </div>
             </section>
 
-            {/* Ambiente del caso */}
+            {/* Ambiente del caso (solo si hay imagen propia) */}
             {c.atmosphereUrl && (
               <figure className="detail-atmo">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.atmosphereUrl} alt="" />
+                <SafeImg src={c.atmosphereUrl} alt="" />
                 <figcaption className="mono">{c.city} · {c.era_year}</figcaption>
               </figure>
             )}

@@ -5,8 +5,7 @@ import { createServiceClient } from '@/lib/server/supabase';
 import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { canActivate } from '@/lib/engine/code-lifecycle';
 import { MAX_HINTS, type EvidenceType } from '@/lib/domain';
-import AtmoImage from '@/components/AtmoImage';
-import { unsplashUrl, picsumUrl } from '@/lib/ui/placeholders';
+import SafeImg from '@/components/SafeImg';
 import ConfidentialStamp from '@/components/noir/ConfidentialStamp';
 import Reveal from '@/components/noir/Reveal';
 import StartTurnModal from './StartTurnModal';
@@ -52,9 +51,7 @@ export default async function MisionPage({ params }: { params: { code: string } 
     .filter((x) => x.n > 0)
     .map((x) => `${x.n} ${EV_LABEL[x.t][x.n === 1 ? 0 : 1]}`);
 
-  const atmoPrimary =
-    (await signedUrl(caseRow.atmosphere_image_path)) ?? unsplashUrl(`${caseRow.city} ${caseRow.era_year} noir dark`, 1800, 1000);
-  const atmoFallback = picsumUrl(`mision-${caseRow.slug}`, 1800, 1000, true);
+  const atmoUrl = await signedUrl(caseRow.atmosphere_image_path);
 
   // Audio de briefing del Comandante (opcional por caso), enlace firmado temporal.
   const briefingUrl = caseRow.briefing_voice_path
@@ -69,7 +66,7 @@ export default async function MisionPage({ params }: { params: { code: string } 
     <div className="mis">
       {/* 1 · Encabezado */}
       <header className="mis-hero">
-        <AtmoImage primary={atmoPrimary} fallback={atmoFallback} alt="" className="mis-hero-bg" />
+        <SafeImg src={atmoUrl} alt="" className="mis-hero-bg" />
         <div className="mis-hero-scrim" />
         <ConfidentialStamp variant="MISIÓN" rotate={-9} className="mis-hero-stamp" />
         <div className="mis-hero-inner">
