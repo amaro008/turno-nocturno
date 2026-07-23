@@ -308,6 +308,9 @@ export async function processDueEvents(ctx: SessionContext, now: Date = new Date
         kind: 'voice',
         content: payload.text ?? payload.transcript ?? '',
         voice_path: payload.voice_path ?? null,
+        // Vínculo al evento: permite resolver el audio EN VIVO al leer el estado,
+        // así un cambio de audio en el admin se refleja sin re-congelar la ruta.
+        timeline_id: ev.id,
       });
     } else if (ev.action === 'evidence') {
       // Aviso breve en el chat (autoría o fallback) — la evidencia va al expediente.

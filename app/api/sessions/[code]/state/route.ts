@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
 
   const svc = createServiceClient();
 
-  const [{ data: rawMessages }, openEvidence, evidenceListing, { data: suspectRows }, { data: verdict }] =
+  const [{ data: rawMessages }, openEvidence, evidenceListing, { data: suspectRows }, { data: verdict }, { data: voiceTimeline }] =
     await Promise.all([
       svc.from('chat_messages').select('*').eq('session_id', ctx.session.id).order('at', { ascending: true }),
       getOpenEvidence(ctx),
@@ -32,7 +32,14 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
         .eq('case_id', ctx.caseRow.id)
         .order('sort_order', { ascending: true }),
       svc.from('verdicts').select('*').eq('session_id', ctx.session.id).maybeSingle(),
+      svc.from('case_timeline').select('id, payload').eq('case_id', ctx.caseRow.id).eq('action', 'voice'),
     ]);
+
+  // Audio del Comandante EN VIVO: la ruta actual del evento manda; si el evento
+  // ya no existe o no tiene audio, cae al voice_path histórico del mensaje.
+  const liveVoiceByTimeline = new Map<string, string | null>(
+    (voiceTimeline ?? []).map((t) => [t.id as string, ((t.payload as { voice_path?: string } | null)?.voice_path) ?? null]),
+  );
 
   // Evidencia abierta → forma legacy con URL de media firmada a 10 min (anti-descarga).
   // El enlace mensaje→evidencia se resuelve server-side por `id`; el `code` (con
@@ -45,14 +52,19 @@ export async function GET(_req: Request, { params }: { params: { code: string } 
   const messages = await Promise.all(
     (rawMessages ?? []).map(async (m) => {
       const evId = m.evidence_code ? idByCode.get(m.evidence_code) : null;
+      // Ruta viva del timeline (si el mensaje está vinculado) o la histórica.
+      const livePath =
+        m.timeline_id && liveVoiceByTimeline.has(m.timeline_id)
+          ? (liveVoiceByTimeline.get(m.timeline_id) ?? m.voice_path)
+          : m.voice_path;
       return {
         id: m.id,
         at: m.at,
         role: m.role,
         kind: m.kind,
         content: m.content,
-        voice_path: m.voice_path,
-        voiceUrl: m.voice_path ? await signedUrl(m.voice_path, SESSION_MEDIA_TTL) : null,
+        voice_path: livePath,
+        voiceUrl: livePath ? await signedUrl(livePath, SESSION_MEDIA_TTL) : null,
         evidence: evId ? evById.get(evId) ?? null : null,
       };
     }),
