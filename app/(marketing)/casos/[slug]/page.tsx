@@ -90,21 +90,6 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
               </figure>
             )}
 
-            {/* Briefing en audio del Comandante */}
-            {c.briefingUrl && (
-              <section className="detail-sec detail-brief">
-                <h2 className="detail-h"><span aria-hidden="true">🎙</span> Escucha al Comandante</h2>
-                <p className="detail-sec-lead">El informe que recibirás al aceptar el caso. Baja las luces y sube el volumen.</p>
-                <audio
-                  className="detail-audio"
-                  src={c.briefingUrl}
-                  controls
-                  controlsList="nodownload noremoteplayback"
-                  preload="none"
-                />
-              </section>
-            )}
-
             {/* Los sospechosos */}
             {suspects.length > 0 && (
               <section className="detail-sec">

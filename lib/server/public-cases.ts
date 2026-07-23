@@ -24,7 +24,6 @@ export interface PublicCase {
   synopsis: string;
   coverUrl: string | null;
   atmosphereUrl: string | null;
-  briefingUrl: string | null;
 }
 
 /** Sospechoso para el escaparate público: sólo ficha neutra + foto firmada. */
@@ -38,10 +37,9 @@ export interface PublicSuspect {
 }
 
 async function toPublic(c: Case): Promise<PublicCase> {
-  const [coverUrl, atmosphereUrl, briefingUrl] = await Promise.all([
+  const [coverUrl, atmosphereUrl] = await Promise.all([
     signedUrl(c.cover_image_path),
     signedUrl(c.atmosphere_image_path),
-    signedUrl(c.briefing_voice_path),
   ]);
   return {
     id: c.id,
@@ -59,7 +57,6 @@ async function toPublic(c: Case): Promise<PublicCase> {
     synopsis: c.synopsis,
     coverUrl,
     atmosphereUrl,
-    briefingUrl,
   };
 }
 
