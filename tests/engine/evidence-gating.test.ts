@@ -11,6 +11,7 @@ const base = (over: Partial<EvidenceBase>): EvidenceBase => ({
   scope: over.scope ?? 'shared',
   variant_id: over.variant_id ?? null,
   initial: over.initial ?? false,
+  is_report: over.is_report ?? false,
   unlocked_at_minute: over.unlocked_at_minute ?? null,
   unlocked_by_event_id: over.unlocked_by_event_id ?? null,
   public_description: over.public_description ?? '',

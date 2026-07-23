@@ -42,7 +42,7 @@ describe('anti-spoiler: toLegacyPublic', () => {
     const out = await toLegacyPublic(necroB);
     expect('code' in out).toBe(false);
     // TypeScript ya lo garantiza, pero lo verificamos en runtime también:
-    expect((out as Record<string, unknown>).code).toBeUndefined();
+    expect((out as unknown as Record<string, unknown>).code).toBeUndefined();
   });
 
   it('ningún valor del payload filtra el código ni su sufijo de variante', async () => {
