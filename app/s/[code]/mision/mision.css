@@ -29,6 +29,12 @@
 .mis-goal-k { flex: 0 0 88px; font-size: 20px; color: var(--stamp-red, #b23b30); letter-spacing: 0.02em; }
 .mis-note { margin: 14px 0 0; font-size: 13px; font-style: italic; color: #6b5b3c; }
 
+/* 1.5 · Briefing en audio */
+.mis-briefing { border: 1px solid #d8c283; }
+.mis-brief-mic { margin-right: 4px; filter: saturate(0.6); }
+.mis-brief-lead { margin: 0 0 14px; font-size: 14.5px; line-height: 1.55; color: #4a3d27; }
+.mis-audio { width: 100%; height: 40px; border-radius: 8px; }
+
 /* 4 · Disponible */
 .mis-have, .mis-rules, .mis-recs { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .mis-have li, .mis-rules li { font-size: 14.5px; line-height: 1.55; padding-left: 18px; position: relative; }

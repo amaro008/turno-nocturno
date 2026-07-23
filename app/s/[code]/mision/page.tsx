@@ -2,7 +2,7 @@ import './mision.css';
 import { redirect } from 'next/navigation';
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
-import { signedUrl } from '@/lib/server/storage';
+import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { canActivate } from '@/lib/engine/code-lifecycle';
 import { MAX_HINTS, type EvidenceType } from '@/lib/domain';
 import AtmoImage from '@/components/AtmoImage';
@@ -56,6 +56,11 @@ export default async function MisionPage({ params }: { params: { code: string } 
     (await signedUrl(caseRow.atmosphere_image_path)) ?? unsplashUrl(`${caseRow.city} ${caseRow.era_year} noir dark`, 1800, 1000);
   const atmoFallback = picsumUrl(`mision-${caseRow.slug}`, 1800, 1000, true);
 
+  // Audio de briefing del Comandante (opcional por caso), enlace firmado temporal.
+  const briefingUrl = caseRow.briefing_voice_path
+    ? await signedUrl(caseRow.briefing_voice_path, SESSION_MEDIA_TTL)
+    : null;
+
   const h = Math.floor(caseRow.time_limit_min / 60);
   const m = caseRow.time_limit_min % 60;
   const durationText = m === 0 ? `${h} horas` : m === 30 ? `${h} horas y media` : `${h} h ${m} min`;
@@ -70,11 +75,28 @@ export default async function MisionPage({ params }: { params: { code: string } 
         <div className="mis-hero-inner">
           <div className="mis-place font-typewriter">{caseRow.city} · {caseRow.era_year}</div>
           <h1 className="mis-title font-editorial">{caseRow.title}</h1>
-          <div className="mis-folio font-typewriter">Expediente reabierto · hoja de misión</div>
+          <div className="mis-folio font-typewriter">Expediente · hoja de misión</div>
         </div>
       </header>
 
       <div className="mis-body">
+        {/* 1.5 · Briefing en audio del Comandante (si el caso lo tiene) */}
+        {briefingUrl && (
+          <Reveal className="mis-card mis-briefing">
+            <h2 className="mis-h font-typewriter">
+              <span className="mis-brief-mic" aria-hidden="true">🎙</span> Briefing del Comandante
+            </h2>
+            <p className="mis-brief-lead">Escuchen el informe antes de entrar al turno.</p>
+            <audio
+              className="mis-audio"
+              src={briefingUrl}
+              controls
+              controlsList="nodownload noremoteplayback"
+              preload="none"
+            />
+          </Reveal>
+        )}
+
         {/* 2 · La situación */}
         <Reveal className="mis-card">
           <h2 className="mis-h font-typewriter">La situación</h2>
