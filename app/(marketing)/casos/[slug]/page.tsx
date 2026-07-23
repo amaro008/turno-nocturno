@@ -153,20 +153,20 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
 
             {user ? (
               <>
-                <a className="btn primary block lg" href="https://wa.me/?text=Quiero%20mi%20c%C3%B3digo%20para%20Turno%20Nocturno" target="_blank" rel="noreferrer">
-                  Pedir mi código por WhatsApp
-                </a>
+                <Link className="btn primary block lg" href="/mi-biblioteca">
+                  Ir a mi biblioteca
+                </Link>
                 <p style={{ color: 'var(--ink-3)', fontSize: 12.5, marginTop: 10, textAlign: 'center' }}>
-                  En el piloto entregamos códigos a mano. Te llegará por correo.
+                  Por ahora el acceso es por invitación. Si recibiste un código por correo, actívalo en tu biblioteca.
                 </p>
               </>
             ) : (
               <>
                 <Link className="btn primary block lg" href="/registro">
-                  Comprar caso
+                  Crear cuenta
                 </Link>
                 <p style={{ color: 'var(--ink-3)', fontSize: 12.5, marginTop: 10, textAlign: 'center' }}>
-                  Crea tu cuenta para recibir tu código de acceso.
+                  Por ahora el acceso es por invitación. Crea tu cuenta y te enviaremos tu código por correo.
                 </p>
               </>
             )}
