@@ -6,9 +6,10 @@
 
 import { createServiceClient } from './supabase';
 import { signedUrl } from './storage';
-import type { Case, CaseDifficulty } from '@/lib/domain';
+import { SUSPECT_PUBLIC_COLUMNS, type SuspectPublic, type Case, type CaseDifficulty } from '@/lib/domain';
 
 export interface PublicCase {
+  id: string;
   slug: string;
   title: string;
   city: string;
@@ -23,14 +24,27 @@ export interface PublicCase {
   synopsis: string;
   coverUrl: string | null;
   atmosphereUrl: string | null;
+  briefingUrl: string | null;
+}
+
+/** Sospechoso para el escaparate público: sólo ficha neutra + foto firmada. */
+export interface PublicSuspect {
+  id: string;
+  full_name: string;
+  age: number | null;
+  occupation: string | null;
+  relationship_to_victim: string | null;
+  photoUrl: string | null;
 }
 
 async function toPublic(c: Case): Promise<PublicCase> {
-  const [coverUrl, atmosphereUrl] = await Promise.all([
+  const [coverUrl, atmosphereUrl, briefingUrl] = await Promise.all([
     signedUrl(c.cover_image_path),
     signedUrl(c.atmosphere_image_path),
+    signedUrl(c.briefing_voice_path),
   ]);
   return {
+    id: c.id,
     slug: c.slug,
     title: c.title,
     city: c.city,
@@ -45,7 +59,30 @@ async function toPublic(c: Case): Promise<PublicCase> {
     synopsis: c.synopsis,
     coverUrl,
     atmosphereUrl,
+    briefingUrl,
   };
+}
+
+/** Sospechosos (no víctima) de un caso para el escaparate público. Neutros,
+ *  sin datos de variante ni culpable — sólo ficha pública + foto firmada. */
+export async function getPublicSuspects(caseId: string): Promise<PublicSuspect[]> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from('suspects')
+    .select(SUSPECT_PUBLIC_COLUMNS)
+    .eq('case_id', caseId)
+    .eq('is_victim', false)
+    .order('sort_order', { ascending: true });
+  return Promise.all(
+    ((data ?? []) as SuspectPublic[]).map(async (s) => ({
+      id: s.id,
+      full_name: s.full_name,
+      age: s.age,
+      occupation: s.occupation,
+      relationship_to_victim: s.relationship_to_victim,
+      photoUrl: await signedUrl(s.photo_path),
+    })),
+  );
 }
 
 /** Todos los casos activos (catálogo público). */
