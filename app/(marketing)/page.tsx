@@ -2,7 +2,7 @@ import Link from 'next/link';
 import SiteNav from './_components/SiteNav';
 import SiteFooter from './_components/SiteFooter';
 import SiteAsset from '@/components/SiteAsset';
-import { InitialsCover } from '@/components/Initials';
+import CaseCoverImg from '@/components/CaseCoverImg';
 import { getActiveCases } from '@/lib/server/public-cases';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
 import ManillaFolder from '@/components/noir/ManillaFolder';
@@ -139,11 +139,7 @@ export default async function HomePage() {
                 <Link href={`/casos/${c.slug}`} className="case-folder-card" style={{ '--rot': `${PIN_ROT[i % PIN_ROT.length] * 0.2}deg` } as React.CSSProperties}>
                   <div className="case-photo">
                     <PaperclipCorner />
-                    {c.coverUrl ? (
-                      <img src={c.coverUrl} alt={c.title} draggable={false} />
-                    ) : (
-                      <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
-                    )}
+                    <CaseCoverImg url={c.coverUrl} alt={c.title} slug={c.slug} city={c.city} era={c.era_year} draggable={false} />
                   </div>
                   <div className="case-cbody">
                     <div className="case-meta font-typewriter"><span>Exp. {caseNumber(c.slug)}</span><span>{c.city} · {c.era_year}</span></div>

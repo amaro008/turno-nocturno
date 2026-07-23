@@ -2,14 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { InitialsCover } from '@/components/Initials';
 import EmptyState from '@/components/EmptyState';
+import CaseCoverImg from '@/components/CaseCoverImg';
 import { DIFFICULTY_LABEL, type CaseDifficulty } from '@/lib/domain';
 import type { PublicCase } from '@/lib/server/public-cases';
-
-function caseNumber(slug: string) {
-  return slug.split('-')[0] ?? '00';
-}
 
 export default function CatalogClient({ cases }: { cases: PublicCase[] }) {
   const [city, setCity] = useState('all');
@@ -57,11 +53,7 @@ export default function CatalogClient({ cases }: { cases: PublicCase[] }) {
           {filtered.map((c) => (
             <Link className="ccard" href={`/casos/${c.slug}`} key={c.slug}>
               <div className="ccard-cover">
-                {c.coverUrl ? (
-                  <img src={c.coverUrl} alt={c.title} />
-                ) : (
-                  <InitialsCover seed={c.slug} label={caseNumber(c.slug)} sub={`${c.city} · ${c.era_year}`} />
-                )}
+                <CaseCoverImg url={c.coverUrl} alt={c.title} slug={c.slug} city={c.city} era={c.era_year} />
                 <div className="cc-scrim" />
                 <span className="cc-place">{c.city} · {c.era_year}</span>
                 <span className="badge-state on cc-diff">{DIFFICULTY_LABEL[c.difficulty]}</span>
