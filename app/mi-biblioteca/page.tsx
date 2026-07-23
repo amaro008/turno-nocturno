@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/server/supabase';
+import { signedUrl } from '@/lib/server/storage';
 import { computeCodeTiming } from '@/lib/engine/code-lifecycle';
 import { AccessCodeStatus } from '@/lib/domain';
 import { redeemCode } from './actions';
@@ -17,7 +18,7 @@ interface CodeRow {
   created_at: string;
   sent_at: string | null;
   activated_at: string | null;
-  cases: { title: string; city: string; era_year: number; slug: string } | null;
+  cases: { title: string; city: string; era_year: number; slug: string; cover_image_path: string | null } | null;
 }
 
 const STATUS_LABEL: Record<AccessCodeStatus, string> = {
@@ -47,11 +48,21 @@ export default async function BibliotecaPage({
 
   const { data } = await supabase
     .from('access_codes')
-    .select('id, code, status, created_at, sent_at, activated_at, cases(title, city, era_year, slug)')
+    .select('id, code, status, created_at, sent_at, activated_at, cases(title, city, era_year, slug, cover_image_path)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   const codes = (data ?? []) as unknown as CodeRow[];
+
+  // Portada firmada por caso (bucket privado). Cachea por ruta: varios códigos
+  // comparten caso, así no firmamos la misma imagen de más.
+  const coverCache = new Map<string, Promise<string | null>>();
+  const signCover = (path: string | null | undefined): Promise<string | null> => {
+    if (!path) return Promise.resolve(null);
+    if (!coverCache.has(path)) coverCache.set(path, signedUrl(path));
+    return coverCache.get(path)!;
+  };
+  const coverUrls = await Promise.all(codes.map((c) => signCover(c.cases?.cover_image_path)));
 
   return (
     <main className="wrap lib">
@@ -86,17 +97,27 @@ export default async function BibliotecaPage({
         </div>
       ) : (
         <div className="lib-grid">
-          {codes.map((c) => {
+          {codes.map((c, i) => {
             const timing = computeCodeTiming(c);
             const expired = c.status === 'expired' || (timing.isExpired && ['sent', 'redeemed'].includes(c.status));
             const status: AccessCodeStatus = expired ? 'expired' : c.status;
+            const coverUrl = coverUrls[i];
             return (
               <article className="lib-card" key={c.id}>
-                <div className="lib-cover">
-                  <span className="cno mono">{caseNumber(c.cases?.slug)}</span>
-                  <span className="cplace">
-                    {c.cases?.city} · {c.cases?.era_year}
-                  </span>
+                <div className={'lib-cover' + (coverUrl ? ' has-img' : '')}>
+                  {coverUrl && (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="lib-cover-img" src={coverUrl} alt="" />
+                      <div className="lib-cover-scrim" />
+                    </>
+                  )}
+                  <div className="lib-cover-meta">
+                    <span className="cno mono">{caseNumber(c.cases?.slug)}</span>
+                    <span className="cplace">
+                      {c.cases?.city} · {c.cases?.era_year}
+                    </span>
+                  </div>
                 </div>
                 <div className="lib-body">
                   <h3>{c.cases?.title ?? 'Caso'}</h3>
