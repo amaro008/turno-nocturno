@@ -49,6 +49,18 @@ export async function signedUrl(path: string | null, ttlSeconds = READ_TTL_SECON
   return data.signedUrl;
 }
 
+/**
+ * URL ESTABLE para imágenes públicas (portadas, hero, retratos de sospechosos,
+ * assets del sitio). Apunta a nuestra ruta proxy `/api/img/...`, que lee del
+ * bucket privado en el servidor y responde con caché de CDN. A diferencia de las
+ * URLs firmadas, NO caduca — así se acaban los fallos intermitentes en marketing.
+ * NO usar para evidencia del juego (esa se sirve firmada, anti-descarga).
+ */
+export function publicImageUrl(path: string | null): string | null {
+  if (!path) return null;
+  return '/api/img/' + path.split('/').map(encodeURIComponent).join('/');
+}
+
 /** TTL para media servida dentro de una sesión activa. Es un enlace temporal
  *  (anti-descarga) pero lo bastante largo para que la URL no rote a media
  *  partida y el navegador conserve la imagen en caché durante el juego. */

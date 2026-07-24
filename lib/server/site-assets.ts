@@ -5,7 +5,7 @@
 
 import { cache } from 'react';
 import { createServiceClient } from './supabase';
-import { signedUrl } from './storage';
+import { signedUrl, publicImageUrl } from './storage';
 import type { SiteAssetRow } from '@/lib/domain/site-assets';
 
 const ASSET_TTL = 60 * 60; // 1 h
@@ -24,13 +24,13 @@ export interface ResolvedAsset {
   alt: string;
 }
 
-/** Resuelve un slot a { url firmada | null, alt }. */
+/** Resuelve un slot a { url estable pública | null, alt }. */
 export async function resolveAsset(slot: string): Promise<ResolvedAsset> {
   const all = await loadAllAssets();
   const row = all.get(slot);
   if (!row) return { url: null, alt: '' };
-  const url = await signedUrl(row.image_path, ASSET_TTL);
-  return { url, alt: row.alt_text };
+  // URL pública estable (sin caducidad) — los assets del sitio son públicos.
+  return { url: publicImageUrl(row.image_path), alt: row.alt_text };
 }
 
 /** Listado completo para el admin (con URLs firmadas). */

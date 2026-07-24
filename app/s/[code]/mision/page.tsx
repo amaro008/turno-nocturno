@@ -2,7 +2,7 @@ import './mision.css';
 import { redirect } from 'next/navigation';
 import { getAuthedUser } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/server/supabase';
-import { signedUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
+import { signedUrl, publicImageUrl, SESSION_MEDIA_TTL } from '@/lib/server/storage';
 import { canActivate } from '@/lib/engine/code-lifecycle';
 import { MAX_HINTS, type EvidenceType } from '@/lib/domain';
 import SafeImg from '@/components/SafeImg';
@@ -51,7 +51,7 @@ export default async function MisionPage({ params }: { params: { code: string } 
     .filter((x) => x.n > 0)
     .map((x) => `${x.n} ${EV_LABEL[x.t][x.n === 1 ? 0 : 1]}`);
 
-  const atmoUrl = await signedUrl(caseRow.atmosphere_image_path);
+  const atmoUrl = publicImageUrl(caseRow.atmosphere_image_path);
 
   // Audio de briefing del Comandante (opcional por caso), enlace firmado temporal.
   const briefingUrl = caseRow.briefing_voice_path

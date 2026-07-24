@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/server/supabase';
-import { signedUrl } from '@/lib/server/storage';
+import { publicImageUrl } from '@/lib/server/storage';
 import { computeCodeTiming } from '@/lib/engine/code-lifecycle';
 import { AccessCodeStatus } from '@/lib/domain';
 import { redeemCode } from './actions';
@@ -54,15 +54,8 @@ export default async function BibliotecaPage({
 
   const codes = (data ?? []) as unknown as CodeRow[];
 
-  // Portada firmada por caso (bucket privado). Cachea por ruta: varios códigos
-  // comparten caso, así no firmamos la misma imagen de más.
-  const coverCache = new Map<string, Promise<string | null>>();
-  const signCover = (path: string | null | undefined): Promise<string | null> => {
-    if (!path) return Promise.resolve(null);
-    if (!coverCache.has(path)) coverCache.set(path, signedUrl(path));
-    return coverCache.get(path)!;
-  };
-  const coverUrls = await Promise.all(codes.map((c) => signCover(c.cases?.cover_image_path)));
+  // Portada por caso: URL pública estable (no caduca) — evita fallos intermitentes.
+  const coverUrls = codes.map((c) => publicImageUrl(c.cases?.cover_image_path ?? null));
 
   return (
     <main className="wrap lib">

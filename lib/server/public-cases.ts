@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { createServiceClient } from './supabase';
-import { signedUrl } from './storage';
+import { publicImageUrl } from './storage';
 import { SUSPECT_PUBLIC_COLUMNS, type SuspectPublic, type Case, type CaseDifficulty } from '@/lib/domain';
 
 export interface PublicCase {
@@ -37,10 +37,9 @@ export interface PublicSuspect {
 }
 
 async function toPublic(c: Case): Promise<PublicCase> {
-  const [coverUrl, atmosphereUrl] = await Promise.all([
-    signedUrl(c.cover_image_path),
-    signedUrl(c.atmosphere_image_path),
-  ]);
+  // URLs públicas estables (sin firmar): marketing no debe caducar.
+  const coverUrl = publicImageUrl(c.cover_image_path);
+  const atmosphereUrl = publicImageUrl(c.atmosphere_image_path);
   return {
     id: c.id,
     slug: c.slug,
@@ -70,16 +69,14 @@ export async function getPublicSuspects(caseId: string): Promise<PublicSuspect[]
     .eq('case_id', caseId)
     .eq('is_victim', false)
     .order('sort_order', { ascending: true });
-  return Promise.all(
-    ((data ?? []) as SuspectPublic[]).map(async (s) => ({
-      id: s.id,
-      full_name: s.full_name,
-      age: s.age,
-      occupation: s.occupation,
-      relationship_to_victim: s.relationship_to_victim,
-      photoUrl: await signedUrl(s.photo_path),
-    })),
-  );
+  return ((data ?? []) as SuspectPublic[]).map((s) => ({
+    id: s.id,
+    full_name: s.full_name,
+    age: s.age,
+    occupation: s.occupation,
+    relationship_to_victim: s.relationship_to_victim,
+    photoUrl: publicImageUrl(s.photo_path),
+  }));
 }
 
 /** Todos los casos activos (catálogo público). */
