@@ -284,7 +284,7 @@
 .detail-hero img.dh-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .detail-hero .dh-scrim { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(11,14,18,0.35), rgba(11,14,18,0.9)); }
 .detail-hero .dh-inner { position: relative; z-index: 2; padding: 44px 0; }
-.detail-hero h1 { font-size: clamp(30px, 5vw, 52px); margin: 10px 0 0; letter-spacing: -0.02em; text-wrap: balance; }
+.detail-hero h1 { font-size: clamp(30px, 5vw, 52px); margin: 10px 0 0; letter-spacing: -0.02em; text-wrap: balance; color: #f4efe4; text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7), 0 1px 3px rgba(0, 0, 0, 0.55); }
 .detail-body { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; padding: 48px 0 80px; align-items: start; }
 .detail-syn { font-size: 17px; line-height: 1.7; color: var(--ink); }
 .detail-side { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 22px; position: sticky; top: 80px; }
