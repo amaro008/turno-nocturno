@@ -46,6 +46,19 @@ export default function CaseGeneralForm({
   const briefingPath = watch('briefing_voice_path');
   const active = watch('active');
 
+  // El audio se persiste en cuanto termina de subir: si el admin sale del tab
+  // sin pulsar "Guardar general", la ruta no se pierde.
+  async function persistBriefing(path: string | null) {
+    setValue('briefing_voice_path', path, { shouldDirty: true });
+    const res = await fetch(`/api/admin/cases/${initial!.slug}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ briefing_voice_path: path }),
+    });
+    if (res.ok) setSavedAt(new Date().toLocaleTimeString('es-MX'));
+    else setServerError('El audio subió pero no se pudo guardar en el caso. Reintenta con "Guardar general".');
+  }
+
   async function onSubmit(values: CaseGeneralInput) {
     setServerError(null);
     const url = mode === 'create' ? '/api/admin/cases' : `/api/admin/cases/${initial!.slug}`;
@@ -147,7 +160,7 @@ export default function CaseGeneralForm({
               kind="audio"
               category="briefing"
               value={briefingPath ?? null}
-              onUploaded={(path) => setValue('briefing_voice_path', path, { shouldDirty: true })}
+              onUploaded={(path) => persistBriefing(path)}
               label="Voz de briefing (mp3)"
             />
           </div>

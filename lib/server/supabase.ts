@@ -14,10 +14,18 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// Next.js parchea fetch y puede guardar respuestas GET en el Data Cache de
+// Vercel, que persiste entre deployments. Una consulta a la BD servida desde
+// ese caché devuelve datos viejos (p. ej. el catálogo sin un caso recién
+// activado) aunque la página sea force-dynamic. Toda lectura a Supabase debe
+// ir SIEMPRE a la base: no-store.
+const noStoreFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: 'no-store' });
+
 /** Cliente ligado a la sesión del usuario (cookies). Respeta RLS. */
 export function createServerClient() {
   const cookieStore = cookies();
   return createSSRClient(url, anonKey, {
+    global: { fetch: noStoreFetch },
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -44,5 +52,6 @@ export function createServerClient() {
 export function createServiceClient() {
   return createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: noStoreFetch },
   });
 }

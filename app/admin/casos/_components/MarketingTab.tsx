@@ -16,7 +16,22 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
   });
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [imgError, setImgError] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: unknown) => setF((p) => ({ ...p, [k]: v }));
+
+  // Las imágenes se persisten en cuanto terminan de subir: si el admin cambia
+  // de pestaña sin pulsar "Guardar", la portada no se pierde.
+  async function persistImage(k: 'cover_image_path' | 'atmosphere_image_path', path: string | null) {
+    set(k, path);
+    setImgError(null);
+    const res = await fetch(`/api/admin/cases/${caseRow.slug}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [k]: path }),
+    });
+    if (res.ok) setSavedAt(new Date().toLocaleTimeString('es-MX'));
+    else setImgError('La imagen subió pero no se pudo guardar en el caso. Reintenta con "Guardar marketing".');
+  }
 
   async function save() {
     setBusy(true);
@@ -43,7 +58,7 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
             kind="image"
             category="cover"
             value={f.cover_image_path}
-            onUploaded={(path) => set('cover_image_path', path)}
+            onUploaded={(path) => persistImage('cover_image_path', path)}
             label="Imagen de portada (catálogo y detalle)"
             spec={getSpec('case.cover')}
           />
@@ -54,7 +69,7 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
             kind="image"
             category="atmosphere"
             value={f.atmosphere_image_path}
-            onUploaded={(path) => set('atmosphere_image_path', path)}
+            onUploaded={(path) => persistImage('atmosphere_image_path', path)}
             label="Imagen atmosférica (hero del detalle)"
             spec={getSpec('case.hero')}
           />
@@ -95,6 +110,7 @@ export default function MarketingTab({ caseRow }: { caseRow: Case }) {
           {busy ? 'Guardando…' : 'Guardar marketing'}
         </button>
         {savedAt && <span className="note-ok" style={{ padding: '6px 10px' }}>Guardado {savedAt}</span>}
+        {imgError && <span className="note-error" style={{ padding: '6px 10px' }}>{imgError}</span>}
       </div>
     </div>
   );
