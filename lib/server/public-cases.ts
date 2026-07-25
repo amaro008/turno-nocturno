@@ -59,6 +59,33 @@ async function toPublic(c: Case): Promise<PublicCase> {
   };
 }
 
+/** Víctima del caso para el escaparate público (ficha neutra, sin spoilers). */
+export interface PublicVictim {
+  full_name: string;
+  age: number | null;
+  occupation: string | null;
+  photoUrl: string | null;
+}
+
+export async function getPublicVictim(caseId: string): Promise<PublicVictim | null> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from('suspects')
+    .select(SUSPECT_PUBLIC_COLUMNS)
+    .eq('case_id', caseId)
+    .eq('is_victim', true)
+    .order('sort_order', { ascending: true })
+    .limit(1);
+  const v = (data ?? [])[0] as SuspectPublic | undefined;
+  if (!v) return null;
+  return {
+    full_name: v.full_name,
+    age: v.age,
+    occupation: v.occupation,
+    photoUrl: publicImageUrl(v.photo_path),
+  };
+}
+
 /** Sospechosos (no víctima) de un caso para el escaparate público. Neutros,
  *  sin datos de variante ni culpable — sólo ficha pública + foto firmada. */
 export async function getPublicSuspects(caseId: string): Promise<PublicSuspect[]> {

@@ -4,7 +4,7 @@ import SiteNav from '../../_components/SiteNav';
 import SiteFooter from '../../_components/SiteFooter';
 import SafeImg from '@/components/SafeImg';
 import { createServerClient } from '@/lib/server/supabase';
-import { getPublicCase, getPublicSuspects } from '@/lib/server/public-cases';
+import { getPublicCase, getPublicSuspects, getPublicVictim } from '@/lib/server/public-cases';
 import { DIFFICULTY_LABEL } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
@@ -36,12 +36,18 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 }
 
+/** Número de expediente a partir del slug ("003-muerte-de-un-chef" → "003"). */
+function caseFolio(slug: string) {
+  return /^\d+/.exec(slug)?.[0] ?? null;
+}
+
 export default async function CaseDetailPage({ params }: { params: { slug: string } }) {
   const c = await getPublicCase(params.slug);
   if (!c) notFound();
 
-  const [suspectsAll, sessionUser] = await Promise.all([
+  const [suspectsAll, victim, sessionUser] = await Promise.all([
     getPublicSuspects(c.id),
+    getPublicVictim(c.id),
     createServerClient().auth.getUser(),
   ]);
   const user = sessionUser.data.user;
@@ -52,6 +58,7 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
   const extraSuspects = Math.max(0, suspectsAll.length - suspects.length);
 
   const hours = Math.round(c.time_limit_min / 30) / 2;
+  const folio = caseFolio(c.slug);
 
   return (
     <>
@@ -60,10 +67,16 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
       <section className="detail-hero">
         <SafeImg src={c.atmosphereUrl} alt={c.title} className="dh-bg" />
         <div className="dh-scrim" />
+        {folio && <span className="dh-folio" aria-hidden="true">Expediente N.º {folio}</span>}
         <div className="wrap dh-inner">
           <span className="kicker">{c.city} · {c.era_year}</span>
           <h1>{c.title}</h1>
           {c.marketing_synopsis && <p className="dh-tag">{c.marketing_synopsis}</p>}
+          <div className="dh-facts">
+            <span>{c.players_min}–{c.players_max} detectives</span>
+            <span>~{hours} h de turno</span>
+            <span>{DIFFICULTY_LABEL[c.difficulty]}</span>
+          </div>
         </div>
       </section>
 
@@ -72,15 +85,52 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
           <div>
             {/* La historia */}
             <section className="detail-sec">
+              <span className="detail-folio">Expediente · Ficha 01 — Hechos</span>
               <h2 className="detail-h">La historia</h2>
               <div className="detail-syn">
                 {c.synopsis.split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
               </div>
             </section>
 
+            {/* La víctima */}
+            {victim && (
+              <section className="detail-sec">
+                <span className="detail-folio">Expediente · Ficha 02 — Occiso</span>
+                <h2 className="detail-h">La víctima</h2>
+                <div className="victim-card">
+                  <div className="victim-photo">
+                    {victim.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={victim.photoUrl} alt={victim.full_name} />
+                    ) : (
+                      <span className="sus-initials">{initials(victim.full_name)}</span>
+                    )}
+                    <span className="stamp-occiso" aria-hidden="true">Occiso</span>
+                  </div>
+                  <div className="victim-info">
+                    <h3 className="victim-name">{victim.full_name}</h3>
+                    <div className="victim-meta">
+                      {victim.age != null && (
+                        <div className="vm"><span className="k">Edad</span><span className="v">{victim.age} años</span></div>
+                      )}
+                      {victim.occupation && (
+                        <div className="vm"><span className="k">Ocupación</span><span className="v">{victim.occupation}</span></div>
+                      )}
+                      <div className="vm"><span className="k">Visto por última vez</span><span className="v">{c.city} · {c.era_year}</span></div>
+                    </div>
+                    <p className="victim-line">
+                      Toda investigación empieza con un cuerpo. El expediente completo —informes, declaraciones
+                      y lo que nadie quiso decir en voz alta— se abre cuando empieza el turno.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Los sospechosos */}
             {suspects.length > 0 && (
               <section className="detail-sec">
+                <span className="detail-folio">Expediente · Ficha 03 — Personas de interés</span>
                 <h2 className="detail-h">Los sospechosos</h2>
                 <p className="detail-sec-lead">Todos tienen algo que ocultar. Uno de ellos miente. ¿Descubrirás quién?</p>
                 <div className="sus-lineup">
@@ -109,6 +159,7 @@ export default async function CaseDetailPage({ params }: { params: { slug: strin
 
             {/* Qué necesitas */}
             <section className="detail-sec">
+              <span className="detail-folio">Expediente · Ficha 04 — Antes del turno</span>
               <h2 className="detail-h">Qué necesitas</h2>
               <ul className="need-list">
                 {NEEDS.map((n) => (
